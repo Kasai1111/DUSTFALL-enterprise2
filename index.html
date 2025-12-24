@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DUST FALL Ver.38.2 - Craft & Equip Fix</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="game-container">
+      <div id="title-screen" class="screen">
+        <h1 class="title-text">THREE DAYS⚔</h1>
+        <p>Ver.38.2 - Craft Fix</p>
+        <p>3日後に対峙する巨大な敵を倒せ。</p>
+        <p>それまでに探索、クラフトを繰り返して準備せよ。</p>
+        <button
+          class="startNewGame-btn"
+          onclick="game.startNewGame()"
+          style="font-size: 20px; padding: 15px 40px; margin-top: 20px"
+        >
+          START GAME
+        </button>
+      </div>
+
+      <button class="rule-open-btn" onclick="openRules()">RULES</button>
+      <div id="rule-modal" class="modal">
+        <div class="modal-content">
+          <span class="close-btn" onclick="closeRules()">&times;</span>
+          <h2
+            style="
+              text-align: center;
+              margin-top: 0;
+              border-bottom: 1px solid #30363d;
+              padding-bottom: 10px;
+            "
+          >
+            BATTLE RULES
+          </h2>
+
+          <div class="rule-section">
+            <h2 class="rule-h2">基本ルール: 三すくみ</h2>
+            <ul class="rule-list">
+              <li>
+                <span class="txt-atk">Attack</span> は
+                <span class="txt-brk">Break</span> に勝つ
+              </li>
+              <li>
+                <span class="txt-brk">Break</span> は
+                <span class="txt-grd">Guard</span> に勝つ
+              </li>
+              <li>
+                <span class="txt-grd">Guard</span> は
+                <span class="txt-atk">Attack</span> に勝つ
+              </li>
+              <li>
+                <span class="txt-sp">SPカード</span>
+                はAttack/Break/Guardすべてに勝利する。
+              </li>
+            </ul>
+          </div>
+
+          <div class="rule-section">
+            <h2 class="rule-h2">カードの種類と効果</h2>
+            <ul class="rule-list">
+              <li>
+                <span class="txt-atk">Attack</span>: 相手の<span
+                  class="txt-strong"
+                  >HP</span
+                >にダメージを与える。
+              </li>
+              <li>
+                <span class="txt-brk">Break</span>: 相手の<span
+                  class="txt-strong"
+                  >姿勢値</span
+                >にダメージを与える。
+              </li>
+              <li>
+                <span class="txt-grd">Guard</span>:
+                相手のAttackダメージを、カードの防御値分だけ軽減する。
+              </li>
+              <li>
+                <span class="txt-sp">SP</span>:
+                強力な必殺技。SPゲージ最大(5)かつ必要EPがある場合のみ使用可能。
+              </li>
+            </ul>
+          </div>
+
+          <div class="rule-section">
+            <h2 class="rule-h2">スロットボーナス</h2>
+            <ul class="rule-list">
+              <li>
+                <strong>Slot 1 で勝利した場合:</strong><br />
+                Slot 2 での自身のダメージ・効果が
+                <span class="txt-strong">1.2倍</span> になる。
+              </li>
+              <li>
+                <strong>Slot 1 で敗北した場合:</strong><br />
+                Slot 2 での自身のダメージ・効果が
+                <span class="txt-strong">0.25倍</span> に激減する。
+              </li>
+            </ul>
+          </div>
+
+          <div class="rule-section">
+            <h2 class="rule-h2">EP と バーンアウト</h2>
+            <ul class="rule-list">
+              <li>
+                カードの使用にはEP(エネルギー)を消費する。残EPの範囲内でカードをセットできる。
+              </li>
+              <li>
+                ターン終了時にEPが
+                <span class="txt-strong">0</span> の場合、<span
+                  style="color: #ff7b72; font-weight: bold"
+                  >BURNOUT</span
+                >
+                状態になる。
+              </li>
+              <li>
+                <strong>BURNOUT効果:</strong>
+                次のターン行動不能となり、受けるダメージが増加する。
+              </li>
+              <li>姿勢値が0になってもBURNOUT状態(Break)となる。</li>
+            </ul>
+          </div>
+
+          <div class="rule-section">
+            <h2 class="rule-h2">アビリティとタグ</h2>
+            <ul class="rule-list">
+              <li>
+                <strong>単発アビリティ:</strong> Slot 1 勝利時に即座に効果発動。
+              </li>
+              <li>
+                <strong>設置アビリティ:</strong> Slot 1
+                勝利時に、相手または自身に「タグ」を付与する。
+              </li>
+              <li>
+                <strong>実行アビリティ:</strong> Slot 2
+                勝利時に、対象に特定の「タグ」が付与されていれば強力な追加効果が発動。
+              </li>
+              <li>
+                「タグ」自体にも、継続ダメージやEP減少などの副次効果がある場合がある。
+              </li>
+            </ul>
+          </div>
+
+          <div class="rule-section">
+            <h2 class="rule-h2">SP と カウンター</h2>
+            <ul class="rule-list">
+              <li>
+                <strong>SP相殺:</strong>
+                お互いがSPカードを出した場合、効果は相殺され無効となる。
+              </li>
+              <li>
+                <strong>カウンター攻撃:</strong>
+                コマンド選択時に「SPカウンター」を選ぶと、相手がSPカードを出した場合に無効化し、反撃する。相手がSP以外なら失敗(EPのみ消費)。
+              </li>
+            </ul>
+          </div>
+
+          <div style="text-align: center; margin-top: 20px">
+            <button
+              class="equip-btn active"
+              onclick="closeRules()"
+              style="width: 100%"
+            >
+              CLOSE
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="base-screen" class="screen">
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          "
+        >
+          <h2>拠点 (DAY <span id="base-day">1</span>)</h2>
+          <div id="base-nav">
+            <button onclick="game.startExplore()">探索に出る</button>
+            <button onclick="game.rest()">休憩 (次の日に進む)</button>
+          </div>
+        </div>
+        <div class="base-layout">
+          <div class="panel">
+            <h3>装備</h3>
+            <div id="loadout-list"></div>
+          </div>
+          <div class="panel">
+            <h3>ステータス & 手荷物</h3>
+            <div style="padding: 10px">
+              <p>
+                HP: <span id="base-hp"></span>/<span id="base-maxhp"></span>
+              </p>
+              <p>素材: <span id="base-mats"></span></p>
+              <p>デッキサイズ: <span id="base-decksize"></span> 枚</p>
+              <p style="margin-top: 10px; color: #ffd700">
+                手荷物: <span id="inventory-count">0</span>/25
+              </p>
+            </div>
+            <div
+              style="
+                margin-top: 20px;
+                border-top: 1px solid #555;
+                padding: 10px;
+              "
+            >
+              <h4 style="margin: 0 0 10px 0; color: #ffd700">デッキ</h4>
+              <div id="base-deck-list" class="deck-list"></div>
+            </div>
+            <div
+              style="
+                margin-top: 20px;
+                border-top: 1px solid #555;
+                padding: 10px;
+              "
+            >
+              <h4 style="margin: 0 0 10px 0; color: #ffd700">手荷物</h4>
+              <div
+                id="inventory-list"
+                style="max-height: 150px; overflow-y: auto"
+              ></div>
+            </div>
+          </div>
+          <div class="panel">
+            <h3>倉庫</h3>
+            <div
+              style="
+                padding: 10px;
+                font-size: 12px;
+                color: #aaa;
+                margin-bottom: 10px;
+              "
+            >
+              ここに保管したものは、次回起動時にも保持されます
+            </div>
+            <div
+              id="storage-list"
+              style="max-height: 400px; overflow-y: auto"
+            ></div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        id="explore-screen"
+        class="screen"
+        style="justify-content: center; align-items: center"
+      >
+        <canvas id="dungeonCanvas" width="984" height="728"></canvas>
+        <button id="explore-panel-toggle" onclick="game.toggleExplorePanel()">
+          装備 (E)
+        </button>
+        <div id="explore-ui">
+          <div>強制帰還まで: <span id="exp-time">180</span>s</div>
+          <div>
+            HP: <span id="exp-hp"></span> | スタミナ: <span id="exp-st"></span>
+          </div>
+          <div id="stealth-indicator">ステルスモード (Shift)</div>
+        </div>
+        <div id="explore-log"></div>
+        <div id="explore-panel">
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 10px;
+            "
+          >
+            <h3 style="margin: 0">装備 & デッキ</h3>
+            <button
+              onclick="game.toggleExplorePanel()"
+              style="padding: 4px 8px; font-size: 11px"
+            >
+              × Close
+            </button>
+          </div>
+          <div
+            style="
+              margin-bottom: 10px;
+              padding: 8px;
+              background: rgba(255, 255, 255, 0.05);
+              border-radius: 4px;
+              font-size: 11px;
+            "
+          >
+            <div><strong>素材:</strong> <span id="explore-mats"></span></div>
+          </div>
+          <div id="explore-loadout-list"></div>
+          <div
+            style="
+              margin-top: 20px;
+              border-top: 1px solid #555;
+              padding-top: 10px;
+            "
+          >
+            <h4 style="margin: 0 0 10px 0; color: #ffd700">デッキ</h4>
+            <div id="explore-deck-list" class="deck-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="card-tooltip"></div>
+      <div id="ability-cutin">
+        <div class="cutin-user" id="ac-user">PLAYER</div>
+        <div class="cutin-name" id="ac-name">ABILITY NAME</div>
+        <div class="cutin-desc" id="ac-desc">Description text...</div>
+      </div>
+
+      <div id="battle-screen" class="screen">
+        <div class="panel" id="e-panel">
+          <div class="status-row">
+            <div style="display: flex; align-items: center">
+              <strong>ENEMY</strong>
+              <span id="e-personality" class="personality-tag"></span>
+            </div>
+            <span class="burnout-tag" id="e-burnout">BURNOUT</span>
+          </div>
+
+          <div class="status-grid">
+            <div>
+              <div class="bar-label">
+                <span>HP: <span id="e-hp"></span></span>
+              </div>
+              <div class="bar-wrap">
+                <div class="hp-bar" id="e-hp-bar"></div>
+              </div>
+            </div>
+            <div>
+              <div class="bar-label">
+                <span>姿勢値: <span id="e-pos"></span></span>
+              </div>
+              <div class="bar-wrap">
+                <div class="pos-bar" id="e-pos-bar"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="active-tags-container" id="e-tags"></div>
+
+          <div class="resource-grid">
+            <div>
+              <div class="bar-label">
+                <span>EP: <span id="e-ep"></span></span>
+              </div>
+              <div class="bar-wrap">
+                <div class="bar-fill ep-fill" id="e-ep-fill"></div>
+              </div>
+            </div>
+            <div>
+              <div class="bar-label">
+                <span>SP: <span id="e-sp"></span></span>
+              </div>
+              <div class="bar-wrap">
+                <div class="bar-fill sp-fill" id="e-sp-fill"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="intel-box" id="e-intel-box">
+            <span>⚠ 合計消費EP量:</span>
+            <span class="intel-val" id="e-pending-cost">0 EP</span>
+          </div>
+
+          <hr style="border: 0; border-top: 1px solid #30363d; margin: 4px 0" />
+          <div
+            style="
+              font-size: 0.8rem;
+              text-align: center;
+              color: #888;
+              margin-bottom: 2px;
+            "
+          ></div>
+          <div class="card-area" id="enemy-hand-view"></div>
+        </div>
+
+        <div id="battle-context" class="context-banner">
+          <span id="context-msg"></span>
+        </div>
+
+        <div style="text-align: center">
+          <div class="slots-wrapper">
+            <div class="slot" id="e-slot1">Enemy<br />Slot 1</div>
+            <div class="slot" id="e-slot2">Enemy<br />Slot 2</div>
+          </div>
+          <div style="font-weight: bold; color: #888; margin: 2px 0">VS</div>
+          <div class="slots-wrapper">
+            <div class="slot" id="p-slot1" onclick="clearSlot(1)">
+              Tap Card<br />to Set
+            </div>
+            <div class="slot" id="p-slot2" onclick="clearSlot(2)">
+              Tap Card<br />to Set
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" id="p-panel">
+          <div class="status-row">
+            <strong>PLAYER</strong>
+            <span class="burnout-tag" id="p-burnout">BURNOUT</span>
+          </div>
+
+          <div class="status-grid">
+            <div>
+              <div class="bar-label">
+                <span>HP: <span id="p-hp"></span></span>
+              </div>
+              <div class="bar-wrap">
+                <div class="hp-bar" id="p-hp-bar"></div>
+              </div>
+            </div>
+            <div>
+              <div class="bar-label">
+                <span>姿勢値: <span id="p-pos"></span></span>
+              </div>
+              <div class="bar-wrap">
+                <div class="pos-bar" id="p-pos-bar"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="active-tags-container" id="p-tags"></div>
+
+          <div class="resource-grid">
+            <div>
+              <div class="bar-label">
+                <span>EP: <span id="p-ep-txt"></span></span>
+              </div>
+              <div class="bar-wrap">
+                <div class="bar-ghost ep-ghost-bg" id="p-ep-ghost"></div>
+                <div class="bar-fill ep-fill" id="p-ep-fill"></div>
+              </div>
+            </div>
+            <div>
+              <div class="bar-label">
+                <span>SP: <span id="p-sp-txt"></span></span>
+              </div>
+              <div class="bar-wrap">
+                <div class="bar-ghost sp-ghost-bg" id="p-sp-ghost"></div>
+                <div class="bar-fill sp-fill" id="p-sp-fill"></div>
+              </div>
+            </div>
+          </div>
+
+          <hr style="border: 0; border-top: 1px solid #30363d; margin: 4px 0" />
+          <div class="card-area" id="player-hand-view"></div>
+        </div>
+
+        <div class="controls">
+          <button id="btn-counter" onclick="toggleCounter()">
+            SP カウンター攻撃
+          </button>
+          <button id="btn-commit" onclick="commitTurn()">コマンド決定</button>
+        </div>
+
+        <div id="log">Game Initialized...</div>
+      </div>
+
+      <div
+        id="result-screen"
+        class="screen"
+        style="justify-content: center; align-items: center; text-align: center"
+      >
+        <div id="result-content"></div>
+        <button
+          onclick="location.reload()"
+          style="margin-top: 30px; padding: 10px 20px"
+        >
+          タイトルに戻る
+        </button>
+      </div>
+    </div>
+
+    <script src="game.js"></script>
+    <script src="battle.js"></script>
+  </body>
+</html>
