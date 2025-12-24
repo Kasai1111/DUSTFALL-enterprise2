@@ -49,13 +49,19 @@ body {
 /* --- UI Components --- */
 .title-text {
   font-size: 100px;
+  margin-top: 200px;
+  /* 余白を埋める */
+  display: flex;
+  align-items: center; /* 垂直方向の中央 */
+  border-bottom: none;
+  border-bottom: 2px solid #dfb252d3; /* ボーダーがあっても中心はズレません */
 }
 h1,
 h2,
 h3 {
   margin: 0;
   padding: 5px;
-  color: #ffd700;
+  color: #d7d8dd;
   text-shadow: 1px 1px 0 #000;
 }
 button {
@@ -77,10 +83,37 @@ button:disabled {
 }
 
 /* --- Title Screen --- */
+.title-explanation {
+  margin-top: auto; /* 上に自動マージンを入れて最下部へ */
+  text-align: center;
+  font-size: 14px;
+  color: #888;
+  padding-bottom: 20px;
+}
+.startNewGame-btn {
+  font-size: 24px; /* 少し大きく */
+  background: none;
+  border: none;
+  color: #d7d8dd;
+  cursor: pointer;
+  font-family: inherit;
+  animation: softGlow 2.5s ease-in-out infinite;
+  margin-bottom: 40px; /* 下の説明文との間隔 */
+}
+.startNewGame-btn:hover {
+  color: #ffffff;
+  background: none; /* 背景なし */
+  text-shadow: 0 0 18px rgb(255, 255, 255);
+}
+
 #title-screen {
-  justify-content: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* 全体を中央付近に */
   align-items: center;
-  background: linear-gradient(45deg, #232324, rgb(0, 0, 0));
+  background: linear-gradient(180deg, #2a2a2c 0%, #000000 100%);
+  padding: 40px 0; /* 上下に少し余裕を持たせる */
+  box-sizing: border-box;
 }
 
 /* --- Base Screen --- */
@@ -423,6 +456,17 @@ canvas {
   }
   100% {
     box-shadow: 0 0 5px #f00;
+  }
+}
+@keyframes softGlow {
+  0% {
+    text-shadow: 0 0 2px rgba(215, 216, 221, 0.2);
+  }
+  50% {
+    text-shadow: 0 0 20px rgba(255, 240, 28, 0.815);
+  }
+  100% {
+    text-shadow: 0 0 2px rgba(215, 216, 221, 0.2);
   }
 }
 
