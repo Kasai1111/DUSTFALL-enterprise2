@@ -5,7 +5,7 @@ const battle = (function () {
   const isTouchDevice =
     "ontouchstart" in window || navigator.maxTouchPoints > 0;
 
-  const MAX_HP = 70;
+  const MAX_HP = 100;
   const MAX_POSTURE = 20;
   const MAX_EP = 8;
   const MAX_SP = 5;
@@ -235,6 +235,8 @@ const battle = (function () {
     };
 
     if (name === "Enemy") {
+      entity.hp = 50;
+      entity.maxHp = 50;
       const AI_STRATEGY_NAMES = Object.keys(AI_STRATEGIES);
       const randomStrategyName =
         AI_STRATEGY_NAMES[Math.floor(Math.random() * AI_STRATEGY_NAMES.length)];
@@ -873,11 +875,24 @@ const battle = (function () {
 
     if (player.hp <= 0 || enemy.hp <= 0) {
       setTimeout(() => {
-        alert(player.hp <= 0 ? "YOU LOSE..." : "YOU WIN!");
-        location.reload();
+        if (player.hp <= 0) {
+          // 敗北時
+          alert("YOU LOSE...");
+          location.reload(); // 敗北時はリロード（ゲームオーバー）でOK
+        } else {
+          // 勝利時
+          alert("YOU WIN!");
+
+          // ★HPの引継ぎ: 戦闘後のHPをゲーム本体に反映
+          game.player.hp = Math.max(1, player.hp);
+
+          // ★探索画面に戻る（引数 true は「敵を倒した」という意味）
+          game.returnToDungeon(true);
+        }
       }, 500);
       return;
     }
+    // 戦闘継続なら次のターンへ
     setTimeout(startTurn, 1000);
   }
 
@@ -2143,8 +2158,19 @@ const battle = (function () {
   }
 
   // ★修正9: 外部からのアクセス用にゲッター/セッターを提供
+  // ★修正9: 外部からのアクセス用にゲッター/セッターを提供
+  // ★修正9: 外部からのアクセス用にゲッター/セッターを提供
   return {
     start: start,
+    commitTurn: commitTurn,
+    clearSlot: clearSlot,
+    toggleCounter: toggleCounter,
+
+    // ★追加: ツールチップ関数を外部に公開する
+    showTooltip: showTooltip,
+    moveTooltip: moveTooltip,
+    hideTooltip: hideTooltip,
+
     get player() {
       return player;
     },
@@ -2161,4 +2187,4 @@ const battle = (function () {
       isBossBattle = val;
     },
   };
-})(); // ★ここを変更: 即時関数の終了
+})();

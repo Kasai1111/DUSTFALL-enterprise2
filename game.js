@@ -395,6 +395,7 @@ function closeRules() {
 const game = {
   state: "INIT",
   day: 1,
+  currentEnemy: null, // ★追加: 戦闘中の敵を記憶する変数
   player: {
     hp: 100,
     maxHp: 100,
@@ -521,10 +522,24 @@ const game = {
     this.log("⚠️ BOSS BATTLE START ⚠️");
   },
   returnToDungeon(enemyKilled) {
-    this.log(enemyKilled ? "敵を倒しました！" : "戦闘から逃れました。");
+    // ★追加: 敵を倒していた場合、その敵を消す（非アクティブにする）
+    if (enemyKilled && this.currentEnemy) {
+      this.currentEnemy.active = false;
+      this.log("敵を撃破した！");
+    } else {
+      this.log("戦闘から逃れました。");
+    }
+
+    this.currentEnemy = null; // リセット
     this.player.playerBlock = 0;
+
+    // 画面切り替え
     this.showScreen("explore-screen");
     this.state = "EXPLORE";
+
+    // HP情報のUI更新
+    dungeon.updateUI(); // ★修正: this.updateUI() ではなく dungeon.updateUI() が正しい
+
     dungeon.start();
   },
   returnToBase(success) {
@@ -579,35 +594,37 @@ const game = {
     this.log(`【${itemKey}】を作成し、装備した。`);
     return true;
   },
-  buildDeck() {
-    const l = this.player.loadout;
+  buildDeck(overrideWeapon, overrideArmor, overrideGadget) {
+    // 引数が指定されていればそれを、なければ現在の装備(loadout)を使用
+    const wKey = overrideWeapon || this.player.loadout.weapon;
+    const aKey = overrideArmor || this.player.loadout.armor;
+    const gKey = overrideGadget || this.player.loadout.gadget;
+
     const deck = [];
-    // 修正: EQUIPMENT.カテゴリ[キー].cards を参照する
-    if (EQUIPMENT.WEAPONS[l.weapon])
-      deck.push(...EQUIPMENT.WEAPONS[l.weapon].cards);
-    if (EQUIPMENT.ARMORS[l.armor])
-      deck.push(...EQUIPMENT.ARMORS[l.armor].cards);
-    if (EQUIPMENT.GADGETS[l.gadget])
-      deck.push(...EQUIPMENT.GADGETS[l.gadget].cards);
+    if (EQUIPMENT.WEAPONS[wKey]) deck.push(...EQUIPMENT.WEAPONS[wKey].cards);
+    if (EQUIPMENT.ARMORS[aKey]) deck.push(...EQUIPMENT.ARMORS[aKey].cards);
+    if (EQUIPMENT.GADGETS[gKey]) deck.push(...EQUIPMENT.GADGETS[gKey].cards);
     return deck;
   },
-  renderDeckList(containerId) {
+  renderDeckList(containerId, previewWeapon, previewArmor, previewGadget) {
     const container = document.getElementById(containerId);
     if (!container) return;
     container.innerHTML = "";
 
-    const deck = this.buildDeck();
+    // プレビュー用の装備があればそれを渡す
+    const deck = this.buildDeck(previewWeapon, previewArmor, previewGadget);
 
-    // カードを集計するためのマップを作成
-    // キー: カードの特徴を表す文字列, 値: { count:枚数, card:カードデータ }
     const countMap = new Map();
 
     deck.forEach((card) => {
-      // カードを識別するためのキーを作成 (アビリティがあればそれも区別)
       const key = JSON.stringify({
         type: card.type,
         cost: card.cost,
         ability: card.ability,
+        // 数値も区別するために含めるのが安全
+        dmg: card.dmg,
+        pos: card.pos,
+        arm: card.arm,
       });
 
       if (!countMap.has(key)) {
@@ -616,20 +633,15 @@ const game = {
       countMap.get(key).count++;
     });
 
-    // 集計結果を表示
     countMap.forEach((value) => {
       const { count, card } = value;
-
-      // 表示名: アビリティがあればその名前、なければカードタイプ名
       let displayName = card.type;
       if (card.ability && ABILITIES[card.ability]) {
-        displayName = ABILITIES[card.ability].name; // アビリティ名を優先表示
+        displayName = ABILITIES[card.ability].name;
       }
 
       const el = document.createElement("div");
       el.className = "deck-card";
-
-      // カードの種類ごとに色分け用のクラスを追加（CSS装飾用）
       el.classList.add(`type-${card.type}`);
 
       el.innerHTML = `
@@ -640,13 +652,41 @@ const game = {
           card.type
         } <span style="font-size:0.8em">(${card.cost})</span></div>
       `;
+
+      // ★追加: マウスホバーでbattle.jsのツールチップを呼び出す
+      // PC向け (マウス操作)
+      el.onmouseenter = (e) => {
+        if (typeof battle !== "undefined" && battle.showTooltip) {
+          battle.showTooltip(e, card);
+        }
+      };
+      el.onmousemove = (e) => {
+        if (typeof battle !== "undefined" && battle.moveTooltip) {
+          battle.moveTooltip(e);
+        }
+      };
+      el.onmouseleave = () => {
+        if (typeof battle !== "undefined" && battle.hideTooltip) {
+          battle.hideTooltip();
+        }
+      };
+
+      // スマホ向け (タップ操作) - 必要であれば有効化
+      // タップで詳細表示したい場合は onclick を使用
+      el.onclick = (e) => {
+        // もし既にツールチップが出ていれば消す、などの制御はお好みで
+        if (typeof battle !== "undefined" && battle.showTooltip) {
+          battle.showTooltip(e, card);
+          e.stopPropagation(); // 親要素への伝播を防ぐ
+        }
+      };
+
       container.appendChild(el);
     });
   },
   renderLoadoutList(listElement, onUpdate) {
     listElement.innerHTML = "";
 
-    // ヘルパー関数：見出しを追加
     const addHeader = (text) => {
       const h3 = document.createElement("h3");
       h3.textContent = text;
@@ -674,8 +714,9 @@ const game = {
           : isUnlocked
           ? "装備する"
           : canAfford
-          ? "作成する"
-          : "作成不可能";
+          ? "作成可能 (タップで詳細)"
+          : "素材不足 (タップで詳細)";
+
         let statusClass = isEq
           ? "equipped"
           : isUnlocked
@@ -683,6 +724,7 @@ const game = {
           : canAfford
           ? "item-buyable"
           : "locked";
+
         const costDisplay =
           !isUnlocked && item.craft_cost
             ? ` (${Object.entries(item.craft_cost)
@@ -694,15 +736,45 @@ const game = {
         el.className = `item-row ${statusClass}`;
         el.style.fontSize = "12px";
         el.innerHTML = `<span>${item.name}</span><span class="item-cost">${costDisplay}</span><span>${statusText}</span>`;
+
+        // ★クリック時の挙動変更
         el.onclick = () => {
-          if (isEq) return;
+          // 1. まずデッキプレビューを更新する (画面下のデッキリストが書き換わります)
+          // プレビューしたい装備構成を作成
+          let pW = this.player.loadout.weapon;
+          let pA = this.player.loadout.armor;
+          let pG = this.player.loadout.gadget;
+
+          if (type === "weapon") pW = key;
+          if (type === "armor") pA = key;
+          if (type === "gadget") pG = key;
+
+          // プレビューとして描画
+          this.renderDeckList("base-deck-list", pW, pA, pG);
+
+          // 2. 装備・購入の処理
+          if (isEq) return; // 既に装備中なら何もしない
+
           if (isUnlocked) {
+            // 解放済みなら装備変更
             this.player.loadout[type] = key;
             if (onUpdate) onUpdate();
             this.log(`Equipped ${item.name}`);
           } else if (canAfford) {
-            this.buyAndEquip(key, type, item.craft_cost);
-            if (onUpdate) onUpdate();
+            // 未解放かつ作成可能なら、確認ダイアログを出す
+            // (いきなり作らず、プレビューで確認してから作成できるようにする)
+            if (
+              confirm(
+                `【${item.name}】を作成して装備しますか？\n消費素材: ${costDisplay}`
+              )
+            ) {
+              this.buyAndEquip(key, type, item.craft_cost);
+              if (onUpdate) onUpdate();
+            }
+          } else {
+            // 作成不可の場合もプレビューだけは更新されているので、ユーザーは内容を確認できます
+            // 追加でアラートを出しても親切かもしれません
+            // alert("素材が足りませんが、デッキ内容はプレビュー表示しました。");
           }
         };
         listElement.appendChild(el);
@@ -710,11 +782,11 @@ const game = {
     };
 
     addHeader("- 武器 -");
-    renderCat(EQUIPMENT.WEAPONS, this.player.loadout.weapon, "weapon"); // 修正
+    renderCat(EQUIPMENT.WEAPONS, this.player.loadout.weapon, "weapon");
     addHeader("- 防具 -");
-    renderCat(EQUIPMENT.ARMORS, this.player.loadout.armor, "armor"); // 修正
+    renderCat(EQUIPMENT.ARMORS, this.player.loadout.armor, "armor");
     addHeader("- アビリティ -");
-    renderCat(EQUIPMENT.GADGETS, this.player.loadout.gadget, "gadget"); // 修正
+    renderCat(EQUIPMENT.GADGETS, this.player.loadout.gadget, "gadget");
   },
   toggleExplorePanel() {
     const panel = document.getElementById("explore-panel");
@@ -952,9 +1024,10 @@ const game = {
     this.updateBaseUI();
   },
   enterBattle(enemy, isAmbush) {
-    dungeon.stop();
-    this.state = "BATTLE";
-    battle.start(enemy, isAmbush);
+    this.currentEnemy = enemy; // ★戦う敵を記録しておく
+    this.state = "BATTLE"; // 状態を戦闘中に変更
+    dungeon.stop(); // ★ダンジョンの動き（描画ループ）を止める
+    battle.start(enemy, isAmbush); // 戦闘開始
     this.showScreen("battle-screen");
   },
   // ... gameオブジェクトの中に追加 ...
@@ -1456,7 +1529,7 @@ const dungeon = {
           return;
         }
         game.player.mats.scrap++;
-        game.log("Found Scrap!");
+        game.log("Scrapを取得!");
       }
     }
     this.p.x = nx;

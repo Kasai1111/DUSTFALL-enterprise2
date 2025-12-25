@@ -385,10 +385,10 @@
           </div>
           <div style="font-weight: bold; color: #888; margin: 2px 0">VS</div>
           <div class="slots-wrapper">
-            <div class="slot" id="p-slot1" onclick="clearSlot(1)">
+            <div class="slot" id="p-slot1" onclick="battle.clearSlot(1)">
               Tap Card<br />to Set
             </div>
-            <div class="slot" id="p-slot2" onclick="clearSlot(2)">
+            <div class="slot" id="p-slot2" onclick="battle.clearSlot(2)">
               Tap Card<br />to Set
             </div>
           </div>
@@ -447,10 +447,12 @@
         </div>
 
         <div class="controls">
-          <button id="btn-counter" onclick="toggleCounter()">
+          <button id="btn-counter" onclick="battle.toggleCounter()">
             SP カウンター攻撃
           </button>
-          <button id="btn-commit" onclick="commitTurn()">コマンド決定</button>
+          <button id="btn-commit" onclick="battle.commitTurn()">
+            コマンド決定
+          </button>
         </div>
 
         <div id="log">Game Initialized...</div>
