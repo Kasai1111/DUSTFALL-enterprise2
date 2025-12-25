@@ -486,34 +486,34 @@ const game = {
   startBossBattle() {
     if (!confirm("準備はいいか？ これが最後の戦いだ。")) return;
 
-    // ボスのステータスを定義（かなり強く設定するぞ）
+    // ボスのステータス定義
     const boss = {
-      hp: 300, // 通常敵の3倍
+      name: "THE BOSS",
+      hp: 300,
       maxHp: 300,
-      pos: 200, // 体幹も強い
-      maxPos: 200,
+      pos: 50,
+      maxPos: 50,
+      ep: 8,
+      sp: 0,
       isBroken: false,
       brokenTurns: 0,
       enemyBlock: 0,
       status: { mark: 0 },
-      nextIntent: null,
-      // ボス専用の特別なフラグや名前を持たせてもよいが、今回はシンプルに
-      // 名前表示などは battle.updateUI で "Enemy" となるが、後で変えることも可能
+      tags: new Set(),
+
+      // ★以下の行を追加してください★
+      strategy: "ENTJ", // AIの思考パターン (ENTJ: 支配的・計画的)
+      personalityWord: "統率者", // 画面に表示される性格名
+      hand: [], // 手札配列の初期化も明示しておくと安全です
     };
 
     // 状態をBATTLEに変更
     this.state = "BATTLE";
-    dungeon.stop(); // 念のためダンジョンタイマー停止
+    dungeon.stop();
     battle.isBossBattle = true;
-    // 戦闘開始！
-    // 第1引数はダンジョン上のエンティティだが、ボスはマップにいないので null を渡す
-    // 第2引数は奇襲フラグ。ボス戦で奇襲はできないので false
-    battle.start(null, false);
 
-    // battle.startの中で作られる this.enemy をボスデータで上書きする
-    // (battle.start は通常の敵HP100で作ってしまうため)
-    battle.enemy = boss;
-    battle.selectIntent(); // ボスの最初の行動を決定
+    // バトル開始
+    battle.start(null, false, boss);
 
     // 画面切り替え
     this.showScreen("battle-screen");
@@ -684,7 +684,7 @@ const game = {
       container.appendChild(el);
     });
   },
-  renderLoadoutList(listElement, onUpdate) {
+  renderLoadoutList(listElement, onUpdate, targetDeckId = "base-deck-list") {
     listElement.innerHTML = "";
 
     const addHeader = (text) => {
@@ -700,47 +700,60 @@ const game = {
         const item = db[key];
         const isEq = currentKey === key;
         const isUnlocked = this.player.unlocked[type].includes(key);
+
+        // 作成コストのチェック
         let canAfford = true;
-        if (item.craft_cost && !isUnlocked) {
-          for (const [mat, amount] of Object.entries(item.craft_cost)) {
-            if (this.player.mats[mat] < amount) {
-              canAfford = false;
-              break;
+        let costDisplay = "";
+        if (item.craft_cost) {
+          costDisplay = Object.entries(item.craft_cost)
+            .map(([k, v]) => `${v} ${k.toUpperCase()}`)
+            .join(", ");
+
+          if (!isUnlocked) {
+            for (const [mat, amount] of Object.entries(item.craft_cost)) {
+              if (this.player.mats[mat] < amount) {
+                canAfford = false;
+                break;
+              }
             }
           }
         }
-        let statusText = isEq
-          ? "✓ 装備中"
-          : isUnlocked
-          ? "装備する"
-          : canAfford
-          ? "作成可能 (タップで詳細)"
-          : "素材不足 (タップで詳細)";
 
-        let statusClass = isEq
-          ? "equipped"
-          : isUnlocked
-          ? ""
-          : canAfford
-          ? "item-buyable"
-          : "locked";
-
-        const costDisplay =
-          !isUnlocked && item.craft_cost
-            ? ` (${Object.entries(item.craft_cost)
-                .map(([k, v]) => `${v} ${k}`)
-                .join(", ")})`
-            : "";
-
+        // 行の作成
         const el = document.createElement("div");
-        el.className = `item-row ${statusClass}`;
-        el.style.fontSize = "12px";
-        el.innerHTML = `<span>${item.name}</span><span class="item-cost">${costDisplay}</span><span>${statusText}</span>`;
+        el.className = `item-row ${isEq ? "equipped" : ""}`;
+        el.style.display = "flex";
+        el.style.flexDirection = "column"; // 縦並びにして下部にボタンを配置
+        el.style.alignItems = "stretch";
+        el.style.cursor = "default"; // 行自体のクリックは無効化
 
-        // ★クリック時の挙動変更
-        el.onclick = () => {
-          // 1. まずデッキプレビューを更新する (画面下のデッキリストが書き換わります)
-          // プレビューしたい装備構成を作成
+        // アイテム名とコスト表示
+        const infoDiv = document.createElement("div");
+        infoDiv.style.display = "flex";
+        infoDiv.style.justifyContent = "space-between";
+        infoDiv.innerHTML = `
+          <span style="font-weight:bold; color:${isEq ? "#0f0" : "#ddd"}">${
+          item.name
+        }</span>
+          <span class="item-cost">${!isUnlocked ? costDisplay : ""}</span>
+        `;
+        el.appendChild(infoDiv);
+
+        // アクションボタン領域
+        const actionsDiv = document.createElement("div");
+        actionsDiv.className = "item-actions";
+        actionsDiv.style.marginTop = "5px";
+        actionsDiv.style.display = "flex";
+        actionsDiv.style.gap = "5px";
+        actionsDiv.style.justifyContent = "flex-end";
+
+        // 1. プレビューボタン (常に表示)
+        const btnPreview = document.createElement("button");
+        btnPreview.innerText = "プレビュー";
+        btnPreview.className = "btn-preview";
+        btnPreview.onclick = (e) => {
+          e.stopPropagation();
+          // プレビュー用の構成を作成
           let pW = this.player.loadout.weapon;
           let pA = this.player.loadout.armor;
           let pG = this.player.loadout.gadget;
@@ -749,34 +762,54 @@ const game = {
           if (type === "armor") pA = key;
           if (type === "gadget") pG = key;
 
-          // プレビューとして描画
-          this.renderDeckList("base-deck-list", pW, pA, pG);
-
-          // 2. 装備・購入の処理
-          if (isEq) return; // 既に装備中なら何もしない
-
-          if (isUnlocked) {
-            // 解放済みなら装備変更
-            this.player.loadout[type] = key;
-            if (onUpdate) onUpdate();
-            this.log(`Equipped ${item.name}`);
-          } else if (canAfford) {
-            // 未解放かつ作成可能なら、確認ダイアログを出す
-            // (いきなり作らず、プレビューで確認してから作成できるようにする)
-            if (
-              confirm(
-                `【${item.name}】を作成して装備しますか？\n消費素材: ${costDisplay}`
-              )
-            ) {
-              this.buyAndEquip(key, type, item.craft_cost);
-              if (onUpdate) onUpdate();
-            }
-          } else {
-            // 作成不可の場合もプレビューだけは更新されているので、ユーザーは内容を確認できます
-            // 追加でアラートを出しても親切かもしれません
-            // alert("素材が足りませんが、デッキ内容はプレビュー表示しました。");
-          }
+          this.renderDeckList(targetDeckId, pW, pA, pG);
         };
+        actionsDiv.appendChild(btnPreview);
+
+        // 2. 装備/作成ボタン
+        if (isEq) {
+          // 既に装備中の場合
+          const lbl = document.createElement("span");
+          lbl.innerText = "装備中";
+          lbl.style.fontSize = "11px";
+          lbl.style.color = "#0f0";
+          lbl.style.alignSelf = "center";
+          lbl.style.marginLeft = "5px";
+          actionsDiv.appendChild(lbl);
+        } else if (isUnlocked) {
+          // 解放済み -> 装備ボタン
+          const btnEquip = document.createElement("button");
+          btnEquip.innerText = "装備";
+          btnEquip.className = "btn-equip";
+          btnEquip.onclick = (e) => {
+            e.stopPropagation();
+            this.player.loadout[type] = key;
+            this.log(`Equipped ${item.name}`);
+            if (onUpdate) onUpdate();
+          };
+          actionsDiv.appendChild(btnEquip);
+        } else {
+          // 未解放 -> 作成ボタン
+          const btnCraft = document.createElement("button");
+          btnCraft.innerText = "作成";
+          btnCraft.className = "btn-craft";
+          if (!canAfford) {
+            btnCraft.disabled = true;
+            btnCraft.innerText = "素材不足";
+          }
+          btnCraft.onclick = (e) => {
+            e.stopPropagation();
+            if (
+              confirm(`【${item.name}】を作成しますか？\n消費: ${costDisplay}`)
+            ) {
+              const success = this.buyAndEquip(key, type, item.craft_cost);
+              if (success && onUpdate) onUpdate();
+            }
+          };
+          actionsDiv.appendChild(btnCraft);
+        }
+
+        el.appendChild(actionsDiv);
         listElement.appendChild(el);
       });
     };
@@ -788,21 +821,17 @@ const game = {
     addHeader("- アビリティ -");
     renderCat(EQUIPMENT.GADGETS, this.player.loadout.gadget, "gadget");
   },
-  toggleExplorePanel() {
-    const panel = document.getElementById("explore-panel");
-    if (panel) {
-      panel.classList.toggle("visible");
-      if (panel.classList.contains("visible")) {
-        this.updateExplorePanel();
-      }
-    }
-  },
   updateExplorePanel() {
     const list = document.getElementById("explore-loadout-list");
     if (list) {
-      this.renderLoadoutList(list, () => {
-        this.updateExplorePanel();
-      });
+      // 第3引数に "explore-deck-list" を渡す
+      this.renderLoadoutList(
+        list,
+        () => {
+          this.updateExplorePanel();
+        },
+        "explore-deck-list"
+      );
     }
     this.renderDeckList("explore-deck-list");
 
@@ -851,9 +880,14 @@ const game = {
 
     const list = document.getElementById("loadout-list");
     if (list) {
-      this.renderLoadoutList(list, () => {
-        this.updateBaseUI();
-      });
+      // 第3引数に "base-deck-list" を渡す
+      this.renderLoadoutList(
+        list,
+        () => {
+          this.updateBaseUI();
+        },
+        "base-deck-list"
+      );
     }
     this.renderDeckList("base-deck-list");
 
@@ -1435,24 +1469,40 @@ const dungeon = {
       isValid =
         isWalkable && !isPlayerPos && !isInStartRoom && !tooCloseToPlayer;
     } while (!isValid);
-    let visionRange = 4;
-    // 修正
-    const pArmor = EQUIPMENT.ARMORS[game.player.loadout.armor];
-    let armorNoise = pArmor ? pArmor.noise || 0 : 0;
-
-    if (type === "enemy") visionRange = 4 + armorNoise;
-    // ... (以下略)
-    this.entities.push({
+    const entity = {
       x,
       y,
       type,
       active: true,
       facing: Math.floor(Math.random() * 4),
       aggro: false,
-      vision: visionRange,
+      vision: type === "enemy" ? 4 : 0, // 簡易化: 敵以外は視界0
       lastSeenPlayer: null,
       aggroTimer: 0,
-    });
+    };
+
+    // typeが 'loot' (素材) の場合、中身を確率で抽選する
+    if (type === "loot") {
+      const rand = Math.random();
+      if (rand < 0.5) {
+        entity.lootType = "scrap"; // 50%
+      } else if (rand < 0.7) {
+        entity.lootType = "herb"; // 20% (0.5~0.7)
+      } else if (rand < 0.9) {
+        entity.lootType = "chip"; // 20% (0.7~0.9)
+      } else {
+        entity.lootType = "data"; // 10% (0.9~1.0)
+      }
+    }
+
+    // 視界の計算（既存コードの調整）
+    if (type === "enemy") {
+      const pArmor = EQUIPMENT.ARMORS[game.player.loadout.armor];
+      let armorNoise = pArmor ? pArmor.noise || 0 : 0;
+      entity.vision = 4 + armorNoise;
+    }
+
+    this.entities.push(entity);
   },
   start() {
     this.lastTime = Date.now();
@@ -1521,17 +1571,27 @@ const dungeon = {
         let isAmbush = game.player.isStealth && !isFrontal;
         game.enterBattle(hit, isAmbush);
         return;
+        // ... (enemyとの衝突判定の直後) ...
       } else if (hit.type === "loot") {
-        hit.active = false;
         // 所持品数のチェック
         if (game.getInventoryCount() >= game.MAX_INVENTORY_SIZE) {
-          game.log("Inventory full! Cannot pick up Scrap.");
-          return;
+          game.log("手荷物が一杯です。(Scrap等を拾えません)");
+          return; // active = false にせずにリターンすることで、拾わずに残す
         }
-        game.player.mats.scrap++;
-        game.log("Scrapを取得!");
+
+        // アイテムを消す
+        hit.active = false;
+
+        // ▼▼▼ 修正箇所: 設定されたlootTypeに応じて素材を増やす ▼▼▼
+        const matName = hit.lootType || "scrap"; // 未設定ならscrap
+        game.player.mats[matName]++;
+
+        // ログ出力 (先頭を大文字にして表示)
+        game.log(`${matName.toUpperCase()}を取得!`);
       }
     }
+
+    // ... (以下、移動処理へ続く) ...
     this.p.x = nx;
     this.p.y = ny;
     if (!game.player.isStealth) {
@@ -1858,10 +1918,30 @@ const dungeon = {
           ctx.lineTo(drawX + ts / 2, drawY + ts / 2);
           ctx.fill();
         } else {
-          ctx.fillStyle = "#ff0";
+          // ▼▼▼ 修正: Lootの色分け処理 ▼▼▼
+          let lootColor = "#fff"; // デフォルト白
+          switch (e.lootType) {
+            case "scrap":
+              lootColor = "#aaa"; // ★修正: 鉄くずを灰色に (#ff01f2ff から変更)
+              break;
+            case "herb":
+              lootColor = "#4f4"; // ハーブ: 緑
+              break;
+            case "chip":
+              lootColor = "#ff0"; // チップ: 黄
+              break;
+            case "data":
+              lootColor = "#0ff"; // データ: 水色
+              break;
+            default:
+              lootColor = "#fff";
+              break;
+          }
+          ctx.fillStyle = lootColor;
           ctx.beginPath();
           ctx.arc(drawX + ts / 2, drawY + ts / 2, 3, 0, 6.28);
           ctx.fill();
+          // ▲▲▲ 修正ここまで ▲▲▲
         }
       }
     });

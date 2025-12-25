@@ -22,7 +22,7 @@ body {
 
 #game-container {
   width: 1024px;
-  height: 768px;
+  height: 925px;
   position: relative;
   background: #000;
   border: 2px solid #333;
@@ -266,10 +266,7 @@ canvas {
 }
 
 /* --- Battle Screen --- */
-#battle-screen {
-  padding: 10px;
-  background: #221;
-}
+
 #battle-area {
   flex: 1;
   display: flex;
@@ -723,7 +720,7 @@ h1 {
   vertical-align: middle;
 }
 /* --- Existing Game Styles --- */
-.game-container {
+.battle-screen {
   width: 100%;
   max-width: 600px;
   display: none;
@@ -898,7 +895,7 @@ h1 {
   display: flex;
   gap: 5px;
   justify-content: center;
-  min-height: 90px;
+  min-height: 80px;
   flex-wrap: wrap;
 }
 .card {
@@ -1203,7 +1200,7 @@ button {
 }
 
 #log {
-  height: 80px;
+  height: 20px;
   overflow-y: auto;
   background: #000;
   color: #3fb950;
@@ -1583,4 +1580,45 @@ button {
     height: 60px;
     font-size: 0.7rem;
   }
+}
+/* --- style.css (末尾に追加) --- */
+
+/* Loadout Buttons */
+.btn-preview {
+  background: #30415d;
+  border-color: #5a7bb5;
+  color: #fff;
+  font-size: 11px;
+  padding: 4px 8px;
+}
+.btn-preview:hover {
+  background: #4a6fa5;
+}
+
+.btn-equip {
+  background: #1a4a1c;
+  border-color: #2e8b32;
+  color: #fff;
+  font-size: 11px;
+  padding: 4px 8px;
+}
+.btn-equip:hover {
+  background: #2e8b32;
+}
+
+.btn-craft {
+  background: #7b5e00;
+  border-color: #ffd700;
+  color: #fff;
+  font-size: 11px;
+  padding: 4px 8px;
+}
+.btn-craft:hover {
+  background: #b38b00;
+}
+.btn-craft:disabled {
+  background: #333;
+  border-color: #555;
+  color: #888;
+  cursor: not-allowed;
 }
