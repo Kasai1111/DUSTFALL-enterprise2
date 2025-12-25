@@ -401,9 +401,13 @@ const game = {
     stamina: 100,
     maxStamina: 100,
     playerBlock: 0,
-    loadout: { weapon: "sword", armor: "light", gadget: "none" },
+    loadout: { weapon: "鉄塊の大剣", armor: "廃材の鎧", gadget: "解除キー" },
     mats: { scrap: 5, chip: 2, herb: 1, data: 0 },
-    unlocked: { weapon: ["sword"], armor: ["light"], gadget: ["none"] },
+    unlocked: {
+      weapon: ["鉄塊の大剣"],
+      armor: ["廃材の鎧"],
+      gadget: ["解除キー"],
+    },
     inventory: [], // 探索中の所持品（最大25個）
   },
   storage: {
@@ -591,18 +595,51 @@ const game = {
     const container = document.getElementById(containerId);
     if (!container) return;
     container.innerHTML = "";
+
     const deck = this.buildDeck();
-    const cardCounts = {};
-    deck.forEach((cardId) => {
-      cardCounts[cardId] = (cardCounts[cardId] || 0) + 1;
+
+    // カードを集計するためのマップを作成
+    // キー: カードの特徴を表す文字列, 値: { count:枚数, card:カードデータ }
+    const countMap = new Map();
+
+    deck.forEach((card) => {
+      // カードを識別するためのキーを作成 (アビリティがあればそれも区別)
+      const key = JSON.stringify({
+        type: card.type,
+        cost: card.cost,
+        ability: card.ability,
+      });
+
+      if (!countMap.has(key)) {
+        countMap.set(key, { count: 0, card: card });
+      }
+      countMap.get(key).count++;
     });
-    Object.keys(cardCounts).forEach((cardId) => {
-      const count = cardCounts[cardId];
+
+    // 集計結果を表示
+    countMap.forEach((value) => {
+      const { count, card } = value;
+
+      // 表示名: アビリティがあればその名前、なければカードタイプ名
+      let displayName = card.type;
+      if (card.ability && ABILITIES[card.ability]) {
+        displayName = ABILITIES[card.ability].name; // アビリティ名を優先表示
+      }
+
       const el = document.createElement("div");
       el.className = "deck-card";
-      el.innerHTML = `<div class="deck-card-name">${card.name}${
+
+      // カードの種類ごとに色分け用のクラスを追加（CSS装飾用）
+      el.classList.add(`type-${card.type}`);
+
+      el.innerHTML = `
+        <div class="deck-card-name">${displayName}${
         count > 1 ? ` x${count}` : ""
-      }</div><div class="deck-card-type">${card.type}</div>`;
+      }</div>
+        <div class="deck-card-type">${
+          card.type
+        } <span style="font-size:0.8em">(${card.cost})</span></div>
+      `;
       container.appendChild(el);
     });
   },

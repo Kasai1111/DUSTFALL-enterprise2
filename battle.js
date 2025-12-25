@@ -173,10 +173,10 @@ const battle = (function () {
   };
 
   function buildDeck(wKey, aKey, accKey) {
-    const wData = EQUIPMENT.WEAPONS[wKey] || {};
-    const aData = EQUIPMENT.ARMORS[aKey] || {};
-    // ★修正5: GADGETS を参照
-    const accData = EQUIPMENT.GADGETS[accKey] || {};
+    // データが存在しない場合のフォールバックを追加
+    const wData = EQUIPMENT.WEAPONS[wKey] || { cards: [] };
+    const aData = EQUIPMENT.ARMORS[aKey] || { cards: [] };
+    const accData = EQUIPMENT.GADGETS[accKey] || { cards: [] }; // GADGETSを参照
 
     const wCards = JSON.parse(JSON.stringify(wData.cards || []));
     const aCards = JSON.parse(JSON.stringify(aData.cards || []));
@@ -264,7 +264,7 @@ const battle = (function () {
     player = createEntity("Player", selectedWeapon, selectedArmor, selectedAcc);
     const wKeys = Object.keys(EQUIPMENT.WEAPONS);
     const aKeys = Object.keys(EQUIPMENT.ARMORS);
-    const accKeys = Object.keys(EQUIPMENT.ACCESSORIES);
+    const accKeys = Object.keys(EQUIPMENT.GADGETS);
     const ew = wKeys[Math.floor(Math.random() * wKeys.length)];
     const ea = aKeys[Math.floor(Math.random() * aKeys.length)];
     const eacc = accKeys[Math.floor(Math.random() * accKeys.length)];
