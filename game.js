@@ -204,6 +204,16 @@ const ABILITIES = {
 
 const EQUIPMENT = {
   WEAPONS: {
+    rotten_pipe: {
+      name: "腐敗した鉄パイプ",
+      craft_cost: { scrap: 1 },
+      cards: [
+        { type: TYPE.ATTACK, cost: 1, dmg: 6, pos: 2 },
+        { type: TYPE.ATTACK, cost: 2, dmg: 8, pos: 2 },
+        { type: TYPE.GUARD, cost: 2, arm: 6 },
+        { type: TYPE.SP, cost: 4, dmg: 20, pos: 5, isSP: true },
+      ],
+    },
     鉄塊の大剣: {
       name: "鉄塊の大剣",
       craft_cost: { scrap: 3 },
@@ -280,6 +290,16 @@ const EQUIPMENT = {
     },
   },
   ARMORS: {
+    tattered_clothes: {
+      name: "ボロボロの服",
+      craft_cost: { scrap: 1 },
+      noise: 2, // 隠密性への影響
+      cards: [
+        { type: TYPE.GUARD, cost: 2, arm: 8 },
+        { type: TYPE.GUARD, cost: 1, arm: 5 },
+        { type: TYPE.BREAK, cost: 1, pos: 7 },
+      ],
+    },
     廃材の鎧: {
       name: "廃材の鎧",
       craft_cost: { scrap: 2 },
@@ -332,6 +352,15 @@ const EQUIPMENT = {
     },
   },
   GADGETS: {
+    tattered_amulet: {
+      name: "ボロボロのお守り", // "のの"となっていたため修正しました
+      craft_cost: { scrap: 1 },
+      cards: [
+        { type: TYPE.BREAK, cost: 2, pos: 8 },
+        { type: TYPE.BREAK, cost: 1, pos: 6 },
+        { type: TYPE.ATTACK, cost: 1, dmg: 8 },
+      ],
+    },
     解除キー: {
       name: "解除キー",
       craft_cost: { scrap: 2 },
@@ -402,8 +431,12 @@ const game = {
     stamina: 100,
     maxStamina: 100,
     playerBlock: 0,
-    loadout: { weapon: "鉄塊の大剣", armor: "廃材の鎧", gadget: "解除キー" },
-    mats: { scrap: 5, chip: 2, herb: 1, data: 0 },
+    loadout: {
+      weapon: "rotten_pipe",
+      armor: "tattered_clothes",
+      gadget: "tattered_amulet",
+    },
+    mats: { scrap: 1, chip: 1, herb: 1, data: 0 },
     unlocked: {
       weapon: ["鉄塊の大剣"],
       armor: ["廃材の鎧"],

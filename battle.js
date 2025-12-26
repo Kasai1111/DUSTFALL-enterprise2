@@ -1641,7 +1641,7 @@ const battle = (function () {
 
       setTimeout(() => {
         resolve();
-      }, 3000);
+      }, 2800);
     });
   }
 
