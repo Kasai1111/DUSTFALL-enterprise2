@@ -1068,6 +1068,7 @@ const battle = (function () {
     const pSP = pCards.some((c) => c?.isSP);
     const eSP = eCards.some((c) => c?.isSP);
 
+    // ▼▼▼▼▼ 修正: カットイン演出の追加 ▼▼▼▼▼
     if (pSP && eSP) {
       log("!!! SP CLASH !!! 双方がSPを使用 -> 相殺！");
       await showAbilityAnnouncement(
@@ -1079,6 +1080,7 @@ const battle = (function () {
       eCards = [null, null];
     } else if (eSP && isCounterMode) {
       log("!!! PLAYER COUNTER SUCCESS !!!");
+      // ★追加: プレイヤーのカウンター成功演出
       await showAbilityAnnouncement(
         "PLAYER",
         "SP COUNTER!!",
@@ -1088,6 +1090,7 @@ const battle = (function () {
       eCards = [null, null];
     } else if (pSP && enemy.isCounterMode) {
       log("!!! ENEMY COUNTER SUCCESS !!!");
+      // ★追加: 敵のカウンター成功演出
       await showAbilityAnnouncement(
         "ENEMY",
         "SP COUNTER!!",
@@ -1096,15 +1099,29 @@ const battle = (function () {
       enemy.hasUsedCounter = true;
       pCards = [null, null];
     } else {
+      // カウンター失敗時の演出
       if (isCounterMode) {
         log("Player Counter Missed... (EP consumed)");
+        // ★追加: プレイヤーのカウンター失敗（空振り）
+        await showAbilityAnnouncement(
+          "PLAYER",
+          "COUNTER FAILED...",
+          "読みが外れた… EPを無駄に消費した。"
+        );
         hasUsedCounter = true;
       }
       if (enemy.isCounterMode) {
         log("Enemy Counter Missed... (EP consumed)");
+        // ★追加: 敵のカウンター失敗
+        await showAbilityAnnouncement(
+          "ENEMY",
+          "COUNTER FAILED...",
+          "敵はタイミングを見誤った！"
+        );
         enemy.hasUsedCounter = true;
       }
     }
+    // ▲▲▲▲▲ 修正ここまで ▲▲▲▲▲
 
     let pMul = 1.0;
     let eMul = 1.0;
@@ -1217,7 +1234,24 @@ const battle = (function () {
     let eForceBreak = false;
     let pMemoryLeakActive = false;
     let eMemoryLeakActive = false;
-
+    // プレイヤーのSP技発動
+    if (result === "WIN" && pCard?.isSP) {
+      log(`>>> PLAYER SP ABILITY UNLEASHED!`);
+      await showAbilityAnnouncement(
+        "PLAYER",
+        "SPECIAL ATTACK", // 汎用SP技名
+        "最大出力によるガード不能攻撃！"
+      );
+    }
+    // 敵のSP技発動
+    if (result === "LOSE" && eCard?.isSP) {
+      log(`>>> ENEMY SP ABILITY UNLEASHED!`);
+      await showAbilityAnnouncement(
+        "ENEMY",
+        "SPECIAL ATTACK",
+        "敵の最大出力攻撃！ 防御できない！"
+      );
+    }
     if (slotNum === 1) {
       if (
         result === "WIN" &&
