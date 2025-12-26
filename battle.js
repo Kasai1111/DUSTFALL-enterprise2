@@ -2134,6 +2134,7 @@ const battle = (function () {
 
   // game.js から呼び出される戦闘開始関数
   function start(mapEntity, isAmbush, bossData = null) {
+    hasUsedCounter = false;
     selectedWeapon = game.player.loadout.weapon;
     selectedArmor = game.player.loadout.armor;
     // ★修正7: GADGETS

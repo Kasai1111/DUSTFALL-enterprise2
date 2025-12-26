@@ -423,6 +423,8 @@ const game = {
   },
   // 保管庫をlocalStorageから読み込み
   loadStorage() {
+    // ★変更: 読み込み処理をコメントアウトして無効化
+    /*
     const saved = localStorage.getItem("dustfall_storage");
     if (saved) {
       try {
@@ -431,14 +433,24 @@ const game = {
         console.error("Failed to load storage:", e);
       }
     }
+    */
+    // 初期状態（空）であることを保証
+    this.storage = {
+      materials: { scrap: 0, chip: 0, herb: 0, data: 0 },
+      equipment: [],
+    };
   },
+
   // 保管庫をlocalStorageに保存
   saveStorage() {
+    // ★変更: 保存処理をコメントアウトして無効化
+    /*
     try {
       localStorage.setItem("dustfall_storage", JSON.stringify(this.storage));
     } catch (e) {
       console.error("Failed to save storage:", e);
     }
+    */
   },
   // 所持品数の計算
   getInventoryCount() {
