@@ -489,8 +489,8 @@ const game = {
     // ボスのステータス定義
     const boss = {
       name: "THE BOSS",
-      hp: 1,
-      maxHp: 1,
+      hp: 300,
+      maxHp: 300,
       pos: 50,
       maxPos: 50,
       ep: 8,
@@ -545,14 +545,26 @@ const game = {
   returnToBase(success) {
     dungeon.stop();
     this.day++;
+
     if (!success) {
+      // --- 変更ここから ---
       this.player.hp = Math.max(1, this.player.hp * 0.1);
+
+      // 手荷物 (装備品など) を全消去
+      this.player.inventory = [];
+
+      // 素材 (Scrap, Chip, Herb, Data) を全消去
+      // ※所持している素材はすべて消えますが、storage(倉庫)の中身は安全です
+      this.player.mats = { scrap: 0, chip: 0, herb: 0, data: 0 };
+
       alert(
-        `強制帰還。現在の手荷物は全て喪失します。\n(DAY ${this.day} になりました)`
+        `強制帰還。現在の手荷物・素材は全て喪失しました。\n(DAY ${this.day} になりました)`
       );
+      // --- 変更ここまで ---
     } else {
       alert(`安全に帰還しました。\n(DAY ${this.day} になりました)`);
     }
+
     this.player.playerBlock = 0;
     this.updateBaseUI();
     this.showScreen("base-screen");
@@ -568,30 +580,52 @@ const game = {
       while (logEl.children.length > 20) logEl.removeChild(logEl.lastChild);
     }
   },
-  buyAndEquip(itemKey, type, itemCost) {
-    // 修正点: itemCost (craft_cost) を正しくチェック
-    // 探索中の素材のみをチェック（保管庫の素材は使用不可）
-    for (const [mat, amount] of Object.entries(itemCost)) {
-      if (this.player.mats[mat] < amount) {
-        alert("資材が足りない。\n(保管庫の素材は探索中は使用できません)");
+  craftItem(itemKey, type, itemCost) {
+    // 1. 手荷物容量チェック (探索中のみ)
+    if (this.state === "EXPLORE") {
+      if (this.getInventoryCount() >= this.MAX_INVENTORY_SIZE) {
+        alert("手荷物が一杯です。作成できません。");
         return false;
       }
     }
+
+    // 2. 素材コストのチェック
+    for (const [mat, amount] of Object.entries(itemCost)) {
+      if (this.player.mats[mat] < amount) {
+        alert("資材が足りません。");
+        return false;
+      }
+    }
+
+    // 3. 素材の消費
     for (const [mat, amount] of Object.entries(itemCost)) {
       this.player.mats[mat] -= amount;
     }
 
-    // 既にアンロック済みでない場合のみ追加
+    // 4. アイテムの行き先分岐
+    // 装備そのもののデータではなく、キー文字列（例: "熱断の刀"）を保存します
+    if (this.state === "BASE") {
+      // 拠点の場合: 倉庫へ送る
+      this.storage.equipment.push(itemKey);
+      this.saveStorage(); // 倉庫の状態を保存
+      alert(`【${itemKey}】を作成し、倉庫へ送りました。`);
+    } else {
+      // 探索中の場合: 手荷物へ入れる
+      this.player.inventory.push(itemKey);
+      alert(`【${itemKey}】を作成し、手荷物に入れました。`);
+    }
+
+    // アンロックリストへの追加（図鑑的な用途として残します）
     if (!this.player.unlocked[type].includes(itemKey)) {
       this.player.unlocked[type].push(itemKey);
     }
-    this.player.loadout[type] = itemKey; // 装備更新
-    this.updateBaseUI();
-    // 探索中の場合、パネルも更新
-    if (this.state === "EXPLORE") {
+
+    // UI更新
+    if (this.state === "BASE") {
+      this.updateBaseUI();
+    } else {
       this.updateExplorePanel();
     }
-    this.log(`【${itemKey}】を作成し、装備した。`);
     return true;
   },
   buildDeck(overrideWeapon, overrideArmor, overrideGadget) {
@@ -684,6 +718,8 @@ const game = {
       container.appendChild(el);
     });
   },
+  /* game.js - gameオブジェクト内 */
+
   renderLoadoutList(listElement, onUpdate, targetDeckId = "base-deck-list") {
     listElement.innerHTML = "";
 
@@ -698,10 +734,11 @@ const game = {
     const renderCat = (db, currentKey, type) => {
       Object.keys(db).forEach((key) => {
         const item = db[key];
-        const isEq = currentKey === key;
-        const isUnlocked = this.player.unlocked[type].includes(key);
+        const isEquipped = currentKey === key;
+        // インベントリに所持しているかチェック
+        const isInInventory = this.player.inventory.includes(key);
 
-        // 作成コストのチェック
+        // 作成コストの計算
         let canAfford = true;
         let costDisplay = "";
         if (item.craft_cost) {
@@ -709,34 +746,32 @@ const game = {
             .map(([k, v]) => `${v} ${k.toUpperCase()}`)
             .join(", ");
 
-          if (!isUnlocked) {
-            for (const [mat, amount] of Object.entries(item.craft_cost)) {
-              if (this.player.mats[mat] < amount) {
-                canAfford = false;
-                break;
-              }
+          for (const [mat, amount] of Object.entries(item.craft_cost)) {
+            if (this.player.mats[mat] < amount) {
+              canAfford = false;
+              break;
             }
           }
         }
 
         // 行の作成
         const el = document.createElement("div");
-        el.className = `item-row ${isEq ? "equipped" : ""}`;
+        el.className = `item-row ${isEquipped ? "equipped" : ""}`;
         el.style.display = "flex";
-        el.style.flexDirection = "column"; // 縦並びにして下部にボタンを配置
+        el.style.flexDirection = "column";
         el.style.alignItems = "stretch";
-        el.style.cursor = "default"; // 行自体のクリックは無効化
+        el.style.cursor = "default";
 
         // アイテム名とコスト表示
         const infoDiv = document.createElement("div");
         infoDiv.style.display = "flex";
         infoDiv.style.justifyContent = "space-between";
         infoDiv.innerHTML = `
-          <span style="font-weight:bold; color:${isEq ? "#0f0" : "#ddd"}">${
-          item.name
-        }</span>
-          <span class="item-cost">${!isUnlocked ? costDisplay : ""}</span>
-        `;
+            <span style="font-weight:bold; color:${
+              isEquipped ? "#0f0" : "#ddd"
+            }">${item.name}</span>
+            <span class="item-cost">${costDisplay}</span>
+            `;
         el.appendChild(infoDiv);
 
         // アクションボタン領域
@@ -747,28 +782,24 @@ const game = {
         actionsDiv.style.gap = "5px";
         actionsDiv.style.justifyContent = "flex-end";
 
-        // 1. プレビューボタン (常に表示)
+        // 1. プレビューボタン
         const btnPreview = document.createElement("button");
         btnPreview.innerText = "プレビュー";
         btnPreview.className = "btn-preview";
         btnPreview.onclick = (e) => {
           e.stopPropagation();
-          // プレビュー用の構成を作成
           let pW = this.player.loadout.weapon;
           let pA = this.player.loadout.armor;
           let pG = this.player.loadout.gadget;
-
           if (type === "weapon") pW = key;
           if (type === "armor") pA = key;
           if (type === "gadget") pG = key;
-
           this.renderDeckList(targetDeckId, pW, pA, pG);
         };
         actionsDiv.appendChild(btnPreview);
 
-        // 2. 装備/作成ボタン
-        if (isEq) {
-          // 既に装備中の場合
+        // 2. 状態に応じたボタン (装備中 / 装備 / 作成)
+        if (isEquipped) {
           const lbl = document.createElement("span");
           lbl.innerText = "装備中";
           lbl.style.fontSize = "11px";
@@ -776,20 +807,19 @@ const game = {
           lbl.style.alignSelf = "center";
           lbl.style.marginLeft = "5px";
           actionsDiv.appendChild(lbl);
-        } else if (isUnlocked) {
-          // 解放済み -> 装備ボタン
+        } else if (isInInventory) {
+          // インベントリにある -> 装備ボタン (交換処理)
           const btnEquip = document.createElement("button");
           btnEquip.innerText = "装備";
           btnEquip.className = "btn-equip";
           btnEquip.onclick = (e) => {
             e.stopPropagation();
-            this.player.loadout[type] = key;
-            this.log(`Equipped ${item.name}`);
+            this.equipItem(key, type); // ここで交換ロジックを呼ぶ
             if (onUpdate) onUpdate();
           };
           actionsDiv.appendChild(btnEquip);
         } else {
-          // 未解放 -> 作成ボタン
+          // インベントリにない -> 作成ボタン
           const btnCraft = document.createElement("button");
           btnCraft.innerText = "作成";
           btnCraft.className = "btn-craft";
@@ -802,7 +832,8 @@ const game = {
             if (
               confirm(`【${item.name}】を作成しますか？\n消費: ${costDisplay}`)
             ) {
-              const success = this.buyAndEquip(key, type, item.craft_cost);
+              // ここで作成ロジックを呼ぶ (buyAndEquip -> craftItem)
+              const success = this.craftItem(key, type, item.craft_cost);
               if (success && onUpdate) onUpdate();
             }
           };
@@ -1005,6 +1036,43 @@ const game = {
         this.saveStorage();
         this.updateBaseUI();
       }
+    }
+  },
+  /* game.js - gameオブジェクト内に追加 */
+
+  equipItem(itemKey, type) {
+    // 1. インベントリ内の該当アイテムを探す
+    const inventoryIndex = this.player.inventory.indexOf(itemKey);
+
+    if (inventoryIndex === -1) {
+      alert(
+        "その装備は手荷物(Inventory)にありません。\n倉庫にある場合は手荷物に移してください。"
+      );
+      return;
+    }
+
+    // 2. 現在装備しているアイテムを取得
+    const currentEquip = this.player.loadout[type];
+
+    // 3. インベントリから新しい装備を削除
+    this.player.inventory.splice(inventoryIndex, 1);
+
+    // 4. 現在の装備をインベントリに戻す
+    // (初期装備などで意図せずnullが入っていないか確認)
+    if (currentEquip) {
+      this.player.inventory.push(currentEquip);
+    }
+
+    // 5. 新しい装備を装着
+    this.player.loadout[type] = itemKey;
+
+    this.log(`【${itemKey}】を装備しました。`);
+
+    // UI更新
+    if (this.state === "BASE") {
+      this.updateBaseUI();
+    } else {
+      this.updateExplorePanel();
     }
   },
   // 保管庫から素材を取り出す

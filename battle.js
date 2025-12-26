@@ -1735,9 +1735,10 @@ const battle = (function () {
 
       document.getElementById(`${prefix}-pos`).innerText = Math.floor(e.pos);
 
+      const hpPercent = (e.hp / e.maxHp) * 100;
       document.getElementById(`${prefix}-hp-bar`).style.width = `${Math.max(
         0,
-        (e.hp / MAX_HP) * 100
+        hpPercent
       )}%`;
       document.getElementById(`${prefix}-pos-bar`).style.width = `${Math.max(
         0,
