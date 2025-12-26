@@ -388,7 +388,7 @@ canvas {
 }
 /* リザルト画面用のスタイル */
 #result-screen h1 {
-  font-size: 60px;
+  font-size: 80px;
   margin-bottom: 20px;
 }
 .result-stat {
@@ -397,7 +397,7 @@ canvas {
   color: #ddd;
 }
 .score-text {
-  font-size: 40px;
+  font-size: 30px;
   color: #ffd700; /* 金色 */
   margin-top: 20px;
   font-weight: bold;
@@ -1621,4 +1621,15 @@ button {
   border-color: #555;
   color: #888;
   cursor: not-allowed;
+}
+.return-title {
+  flex: none;
+  margin-top: 50px;
+  font-size: 24px; /* 少し大きく */
+  background: none;
+  border: none;
+  color: #d7d8dd;
+  cursor: pointer;
+  font-family: inherit;
+  animation: softGlow 2.5s ease-in-out infinite;
 }

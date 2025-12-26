@@ -877,8 +877,7 @@ const battle = (function () {
       setTimeout(() => {
         if (player.hp <= 0) {
           // 敗北時
-          alert("YOU LOSE...");
-          location.reload(); // 敗北時はリロード（ゲームオーバー）でOK
+          game.showResult(false, turn); // ゲームオーバー画面へ
         } else {
           // 勝利時
           alert("YOU WIN!");
@@ -886,8 +885,15 @@ const battle = (function () {
           // ★HPの引継ぎ: 戦闘後のHPをゲーム本体に反映
           game.player.hp = Math.max(1, player.hp);
 
-          // ★探索画面に戻る（引数 true は「敵を倒した」という意味）
-          game.returnToDungeon(true);
+          // ▼▼▼ 修正: ボス戦かどうかで分岐 ▼▼▼
+          if (isBossBattle) {
+            // ボス戦勝利 -> ゲームクリア画面へ (ターン数を渡す)
+            game.showResult(true, turn);
+          } else {
+            // 通常戦闘勝利 -> 探索画面に戻る
+            game.returnToDungeon(true);
+          }
+          // ▲▲▲ 修正ここまで ▲▲▲
         }
       }, 500);
       return;

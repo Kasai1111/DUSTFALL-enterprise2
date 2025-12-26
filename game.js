@@ -489,8 +489,8 @@ const game = {
     // ボスのステータス定義
     const boss = {
       name: "THE BOSS",
-      hp: 300,
-      maxHp: 300,
+      hp: 1,
+      maxHp: 1,
       pos: 50,
       maxPos: 50,
       ep: 8,
@@ -840,6 +840,22 @@ const game = {
     if (matsEl) {
       const m = this.player.mats;
       matsEl.innerText = `Scrap:${m.scrap} Chip:${m.chip} Herb:${m.herb} Data:${m.data}`;
+    }
+  },
+  /* --- game.js (gameオブジェクト内に追加) --- */
+
+  // 探索画面の装備パネル開閉
+  toggleExplorePanel() {
+    const panel = document.getElementById("explore-panel");
+    if (!panel) return;
+
+    // クラス 'visible' をつけ外しする
+    if (panel.classList.contains("visible")) {
+      panel.classList.remove("visible");
+    } else {
+      panel.classList.add("visible");
+      // 開いたときに中身を最新化する
+      this.updateExplorePanel();
     }
   },
   updateBaseUI() {
