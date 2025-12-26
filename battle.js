@@ -688,6 +688,7 @@ const battle = (function () {
     });
 
     // SP CARD INJECTION
+    // SP CARD INJECTION
     if (turn === 4) {
       [player, enemy].forEach((e) => {
         if (e.reservedSP) {
@@ -701,6 +702,13 @@ const battle = (function () {
             e.deck.splice(idx, 0, e.reservedSP);
             log(`[System] ${e.name}: SP Card added to deck.`);
           }
+
+          // ▼▼▼ 追加: 山札循環用リスト(initialDeckList)にもSPカードを追加する ▼▼▼
+          if (e.initialDeckList) {
+            e.initialDeckList.push(e.reservedSP);
+          }
+          // ▲▲▲ 追加ここまで ▲▲▲
+
           e.reservedSP = null;
         }
       });

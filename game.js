@@ -420,11 +420,47 @@ function openRules() {
 function closeRules() {
   document.getElementById("rule-modal").style.display = "none";
 }
+
 /* --- 2. GAME ENGINE --- */
 const game = {
   state: "INIT",
   day: 1,
-  currentEnemy: null, // ★追加: 戦闘中の敵を記憶する変数
+  isPrologueBattle: false, // ★追加: プロローグ戦フラグ
+  currentEnemy: null,
+  // ▼▼▼ 追加: ラスボスの装備セット定義と、選択されたセットの保存場所 ▼▼▼
+  currentBossLoadout: null, // ここにリロード毎にランダムなセットが入ります
+  bossLoadouts: [
+    {
+      name: "致命の刺突", // 識別用（ログに出しても面白いかもしれません）
+      weapon: "スタンパイル",
+      armor: "廃材の鎧",
+      gadget: "戦術バイザー",
+    },
+    {
+      name: "焦熱の檻",
+      weapon: "熱断の刀",
+      armor: "光学迷彩コート",
+      gadget: "汚染アンプル",
+    },
+    {
+      name: "ウイルス・ドレイン",
+      weapon: "鉄塊の大剣",
+      armor: "EP炉心",
+      gadget: "解析端末",
+    },
+    {
+      name: "不屈の重戦士",
+      weapon: "鉄塊の大剣",
+      armor: "反応装甲",
+      gadget: "位相ズラし装置",
+    },
+    {
+      name: "共鳴バースト",
+      weapon: "共鳴ブラスター",
+      armor: "自動修復スーツ",
+      gadget: "解除キー",
+    },
+  ],
   player: {
     hp: 100,
     maxHp: 100,
@@ -452,6 +488,11 @@ const game = {
 
   init() {
     this.loadStorage(); // 保管庫を読み込み
+    // ▼▼▼ 追加: ボスの装備をランダムに決定する ▼▼▼
+    const randomIndex = Math.floor(Math.random() * this.bossLoadouts.length);
+    this.currentBossLoadout = this.bossLoadouts[randomIndex];
+    console.log(`The Boss Type: ${this.currentBossLoadout.name}`); // デバッグ用にコンソール表示
+    // ▲▲▲ 追加ここまで ▲▲▲
     this.showScreen("title-screen");
   },
   // 保管庫をlocalStorageから読み込み
@@ -504,11 +545,85 @@ const game = {
     if (target) target.classList.add("active");
   },
   startNewGame() {
+    // 初期化処理
     this.day = 1;
     this.player.hp = 100;
-    this.updateBaseUI();
-    this.showScreen("base-screen");
-    this.state = "BASE";
+
+    // ▼▼▼ 修正: スキップ確認ダイアログを追加 ▼▼▼
+    const skipPrologue = confirm(
+      "プロローグ（THE BOSS戦）をスキップしますか？\n\n[OK] スキップ (敗北扱いとして拠点から開始)\n[キャンセル] 戦闘開始"
+    );
+
+    if (skipPrologue) {
+      // --- スキップした場合 (強制敗北扱い) ---
+      // ログ出力
+      this.log("プロローグをスキップしました。");
+
+      // showResultの敗北時ロジックと同じ状態にする
+      this.isPrologueBattle = false; // フラグはリセット
+      this.player.hp = this.player.maxHp; // HPを全回復
+      this.player.playerBlock = 0;
+
+      // 拠点画面へ移行 (ロードアウト画面)
+      this.updateBaseUI();
+      this.showScreen("base-screen");
+      this.state = "BASE";
+    } else {
+      // --- スキップしない場合 (通常通り戦闘開始) ---
+      this.startPrologueBattle();
+    }
+    // ▲▲▲ 修正ここまで ▲▲▲
+  },
+  startPrologueBattle() {
+    // ▼▼▼ 追加: 選ばれた装備セットからデッキを構築 ▼▼▼
+    const loadout = this.currentBossLoadout;
+    // buildDeckメソッドを使ってカードリストを生成します
+    const bossDeck = this.buildDeck(
+      loadout.weapon,
+      loadout.armor,
+      loadout.gadget
+    );
+    // ▲▲▲ 追加ここまで ▲▲▲
+
+    // ラスボスと同じステータスを定義
+    const boss = {
+      name: "THE BOSS",
+      hp: 300,
+      maxHp: 300,
+      pos: 50,
+      maxPos: 50,
+      ep: 8,
+      sp: 0,
+      isBroken: false,
+      brokenTurns: 0,
+      enemyBlock: 0,
+      status: { mark: 0 },
+      tags: new Set(),
+      strategy: "ENTJ",
+      personalityWord: "統率者",
+      hand: [],
+
+      // ▼▼▼ 修正: ここで生成したデッキをセットする ▼▼▼
+      deck: bossDeck,
+      // ▲▲▲ 修正ここまで ▲▲▲
+    };
+
+    // フラグを立てる
+    this.isPrologueBattle = true;
+
+    // 戦闘状態へ移行
+    this.state = "BATTLE";
+    dungeon.stop();
+    battle.isBossBattle = true; // ボス戦扱いにする（勝利時の演出等のため）
+
+    // バトル開始
+    battle.start(null, false, boss);
+
+    // 画面切り替え
+    this.showScreen("battle-screen");
+
+    // ログ出力
+    this.log("⚠️ SUDDEN ENCOUNTER! THE BOSS APPEARED! ⚠️");
   },
   startExplore() {
     try {
@@ -531,6 +646,15 @@ const game = {
   startBossBattle() {
     if (!confirm("準備はいいか？ これが最後の戦いだ。")) return;
 
+    // ▼▼▼ 追加: 選ばれた装備セットからデッキを構築 (プロローグと同じ変数を使用) ▼▼▼
+    const loadout = this.currentBossLoadout;
+    const bossDeck = this.buildDeck(
+      loadout.weapon,
+      loadout.armor,
+      loadout.gadget
+    );
+    // ▲▲▲ 追加ここまで ▲▲▲
+
     // ボスのステータス定義
     const boss = {
       name: "THE BOSS",
@@ -545,11 +669,13 @@ const game = {
       enemyBlock: 0,
       status: { mark: 0 },
       tags: new Set(),
+      strategy: "ENTJ",
+      personalityWord: "統率者",
+      hand: [],
 
-      // ★以下の行を追加してください★
-      strategy: "ENTJ", // AIの思考パターン (ENTJ: 支配的・計画的)
-      personalityWord: "統率者", // 画面に表示される性格名
-      hand: [], // 手札配列の初期化も明示しておくと安全です
+      // ▼▼▼ 修正: 生成したデッキをセット ▼▼▼
+      deck: bossDeck,
+      // ▲▲▲ 修正ここまで ▲▲▲
     };
 
     // 状態をBATTLEに変更
@@ -1206,22 +1332,45 @@ const game = {
 
   // リザルト画面を表示する処理
   showResult(isWin, turns) {
+    // ★追加: プロローグ戦で敗北した場合の分岐
+    if (!isWin && this.isPrologueBattle) {
+      // フラグをリセット
+      this.isPrologueBattle = false;
+
+      // メッセージ表示
+      alert(
+        "圧倒的な力の前に敗北した……。\nしかし、あなたは一命を取り留めた。\n\nここから、決戦への準備（3日間）が始まる。"
+      );
+
+      // DAY 1 の状態へリセットして拠点へ
+      this.day = 1;
+      this.player.hp = this.player.maxHp; // HPを全回復
+      this.player.playerBlock = 0;
+
+      // 拠点画面へ移行
+      this.updateBaseUI();
+      this.showScreen("base-screen");
+      this.state = "BASE";
+      return; // ここで処理を終了（GAME OVER画面を出さない）
+    }
+
+    // --- 以下は既存のロジック ---
     const container = document.getElementById("result-content");
 
     if (isWin) {
       // 勝利時：詳細を表示
       const score = this.calculateScore(turns);
       container.innerHTML = `
-              <h1 style="color: #4f4;">GAME CLEAR</h1>
-              <div class="result-stat">撃破ターン数: <strong>${turns}</strong></div>
-              <div class="result-stat">残りHP: <strong>${this.player.hp}</strong></div>
-              <div class="score-text">総合ポイント: ${score}点</div>
-            `;
+            <h1 style="color: #4f4;">GAME CLEAR</h1>
+            <div class="result-stat">撃破ターン数: <strong>${turns}</strong></div>
+            <div class="result-stat">残りHP: <strong>${this.player.hp}</strong></div>
+            <div class="score-text">総合ポイント: ${score}点</div>
+          `;
     } else {
       // 敗北時：シンプルにGAME OVER
       container.innerHTML = `
-              <div class="game-over-text">GAME OVER</div>
-            `;
+            <div class="game-over-text">GAME OVER</div>
+          `;
     }
 
     this.showScreen("result-screen");
