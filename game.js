@@ -210,7 +210,7 @@ const EQUIPMENT = {
     腐敗した鉄パイプ: {
       name: "腐敗した鉄パイプ",
       craft_cost: { scrap: 1 },
-      upgradeTo: "rotten_pipe_plus",
+      upgradeTo: "鉄パイプ・補強",
       cards: [
         { type: TYPE.ATTACK, cost: 1, dmg: 6, pos: 2 },
         { type: TYPE.ATTACK, cost: 2, dmg: 8, pos: 2 },
@@ -221,7 +221,7 @@ const EQUIPMENT = {
     鉄塊の大剣: {
       name: "鉄塊の大剣",
       craft_cost: { scrap: 3 },
-      upgradeTo: "greatsword_plus",
+      upgradeTo: "剛剣・断罪",
       cards: [
         { type: TYPE.ATTACK, cost: 5, dmg: 18, pos: 5, ability: "GRAVITY" },
         {
@@ -238,7 +238,7 @@ const EQUIPMENT = {
     熱断の刀: {
       name: "熱断の刀",
       craft_cost: { scrap: 5, chip: 2 },
-      upgradeTo: "katana_plus",
+      upgradeTo: "灼刀・陽炎",
       cards: [
         { type: TYPE.ATTACK, cost: 1, dmg: 6, pos: 2, ability: "OIL_JAR" },
         { type: TYPE.ATTACK, cost: 2, dmg: 8, pos: 2, ability: "FIRE_BLAST" },
@@ -249,7 +249,7 @@ const EQUIPMENT = {
     スタンパイル: {
       name: "スタンパイル",
       craft_cost: { scrap: 5, herb: 2 },
-      upgradeTo: "pile_plus",
+      upgradeTo: "パイルバンカー・カスタム",
       cards: [
         { type: TYPE.BREAK, cost: 2, pos: 10, ability: "ARMOR_BREAK" },
         {
@@ -298,7 +298,7 @@ const EQUIPMENT = {
       ],
     },
     // --- Upgraded Weapons (isUpgraded: true) ---
-    rotten_pipe_plus: {
+    鉄パイプ・補強: {
       name: "鉄パイプ・補強",
       isUpgraded: true,
       upgrade_cost: { scrap: 5, chip: 1, re_data: 1 },
@@ -309,8 +309,8 @@ const EQUIPMENT = {
         { type: TYPE.SP, cost: 4, dmg: 25, pos: 8, isSP: true },
       ],
     },
-    greatsword_plus: {
-      name: "剛剣『断罪』",
+    剛剣・断罪: {
+      name: "剛剣・断罪",
       isUpgraded: true,
       upgrade_cost: { scrap: 10, data: 2, re_data: 1 },
       cards: [
@@ -326,7 +326,7 @@ const EQUIPMENT = {
         { type: TYPE.SP, cost: 7, dmg: 65, pos: 30, isSP: true },
       ],
     },
-    katana_plus: {
+    灼刀・陽炎: {
       name: "灼刀・陽炎",
       isUpgraded: true,
       upgrade_cost: { scrap: 6, chip: 6, herb: 3, re_data: 1 },
@@ -337,7 +337,7 @@ const EQUIPMENT = {
         { type: TYPE.SP, cost: 5, dmg: 45, pos: 10, isSP: true },
       ],
     },
-    pile_plus: {
+    パイルバンカー・カスタム: {
       name: "パイルバンカー・カスタム",
       isUpgraded: true,
       upgrade_cost: { scrap: 8, herb: 4, chip: 3, re_data: 1 },
@@ -1201,6 +1201,7 @@ const game = {
   /* game.js - gameオブジェクト内 */
 
   /* --- game.js: renderLoadoutList の差し替え --- */
+  // game.js 内の renderLoadoutList をこれに置き換えてください
   renderLoadoutList(listElement, onUpdate, targetDeckId = "base-deck-list") {
     listElement.innerHTML = "";
 
@@ -1215,28 +1216,22 @@ const game = {
     const renderCat = (db, currentKey, type) => {
       Object.keys(db).forEach((key) => {
         const item = db[key];
-        // 強化後のアイテム(isUpgraded=true)で、かつ所持していない場合はリストに表示しない（作成できないため）
-        // ただし、装備中であれば表示する
         const isEquipped = currentKey === key;
         const isInInventory = this.player.inventory.includes(key);
         const isOwned = isEquipped || isInInventory;
 
-        // 強化済みアイテムは、持っていないなら一覧に出さない（作成不可なので）
         if (item.isUpgraded && !isOwned) return;
 
-        // コスト表示生成関数
         const getCostDisplay = (costObj) => {
           if (!costObj) return "";
           return Object.entries(costObj)
             .map(([k, v]) => {
-              // 強化データは特別な表記にする
               if (k === "re_data") return `${v} 強化データ`;
               return `${v} ${k.toUpperCase()}`;
             })
             .join(", ");
         };
 
-        // 所持チェック関数
         const checkCost = (costObj) => {
           if (!costObj) return true;
           for (const [mat, amount] of Object.entries(costObj)) {
@@ -1245,7 +1240,6 @@ const game = {
           return true;
         };
 
-        // 行の作成
         const el = document.createElement("div");
         el.className = `item-row ${isEquipped ? "equipped" : ""}`;
         el.style.display = "flex";
@@ -1253,7 +1247,6 @@ const game = {
         el.style.alignItems = "stretch";
         el.style.cursor = "default";
 
-        // アイテム名とコスト表示
         let costText = "";
         if (item.isUpgraded) costText = "UPGRADED";
         else if (item.craft_cost) costText = getCostDisplay(item.craft_cost);
@@ -1269,16 +1262,15 @@ const game = {
           `;
         el.appendChild(infoDiv);
 
-        // アクションボタン領域
         const actionsDiv = document.createElement("div");
         actionsDiv.className = "item-actions";
         actionsDiv.style.marginTop = "5px";
         actionsDiv.style.display = "flex";
         actionsDiv.style.gap = "5px";
         actionsDiv.style.justifyContent = "flex-end";
-        actionsDiv.style.flexWrap = "wrap"; // ボタンが多いので折り返し許可
+        actionsDiv.style.flexWrap = "wrap";
 
-        // 1. プレビューボタン
+        // 1. プレビュー
         const btnPreview = document.createElement("button");
         btnPreview.innerText = "プレビュー";
         btnPreview.className = "btn-preview";
@@ -1294,7 +1286,7 @@ const game = {
         };
         actionsDiv.appendChild(btnPreview);
 
-        // 2. 装備・作成ボタン
+        // 2. 装備・作成
         if (isEquipped) {
           const lbl = document.createElement("span");
           lbl.innerText = "装備中";
@@ -1314,7 +1306,6 @@ const game = {
           };
           actionsDiv.appendChild(btnEquip);
         } else {
-          // 未所持 -> 作成ボタン
           const canAfford = checkCost(item.craft_cost);
           const btnCraft = document.createElement("button");
           btnCraft.innerText = "作成";
@@ -1325,13 +1316,7 @@ const game = {
           }
           btnCraft.onclick = (e) => {
             e.stopPropagation();
-            if (
-              confirm(
-                `【${item.name}】を作成しますか？\n消費: ${getCostDisplay(
-                  item.craft_cost
-                )}`
-              )
-            ) {
+            if (confirm(`【${item.name}】を作成しますか？\n消費: ${getCostDisplay(item.craft_cost)}`)) {
               const success = this.craftItem(key, type, item.craft_cost);
               if (success && onUpdate) onUpdate();
             }
@@ -1339,23 +1324,21 @@ const game = {
           actionsDiv.appendChild(btnCraft);
         }
 
-        // 3. 強化ボタン & 強化プレビュー (所持していて、強化先がある場合)
+        // 3. 強化ボタン
         if (isOwned && item.upgradeTo && db[item.upgradeTo]) {
           const upItem = db[item.upgradeTo];
           const upCost = upItem.upgrade_cost;
           const canUpgrade = checkCost(upCost);
 
-          // 強化プレビュー
           const btnUpPreview = document.createElement("button");
           btnUpPreview.innerText = "強化後確認";
           btnUpPreview.className = "btn-preview";
-          btnUpPreview.style.borderColor = "#f2cc60"; // Gold color hint
+          btnUpPreview.style.borderColor = "#f2cc60";
           btnUpPreview.onclick = (e) => {
             e.stopPropagation();
             let pW = this.player.loadout.weapon;
             let pA = this.player.loadout.armor;
             let pG = this.player.loadout.gadget;
-            // プレビュー用に一時的に強化先IDを指定
             if (type === "weapon") pW = item.upgradeTo;
             if (type === "armor") pA = item.upgradeTo;
             if (type === "gadget") pG = item.upgradeTo;
@@ -1363,12 +1346,14 @@ const game = {
           };
           actionsDiv.appendChild(btnUpPreview);
 
-          // 強化実行ボタン
           const btnUpgrade = document.createElement("button");
           btnUpgrade.innerText = "強化";
-          btnUpgrade.className = "btn-craft"; // Craft style
+          btnUpgrade.className = "btn-craft";
           btnUpgrade.style.background = "#5a3a00";
           btnUpgrade.style.borderColor = "#f2cc60";
+
+          // ★追加: ここでホバー時に必要な素材を表示するようにしました
+          btnUpgrade.title = `必要素材: ${getCostDisplay(upCost)}`;
 
           if (!canUpgrade) {
             btnUpgrade.disabled = true;
@@ -1377,15 +1362,7 @@ const game = {
 
           btnUpgrade.onclick = (e) => {
             e.stopPropagation();
-            if (
-              confirm(
-                `【${item.name}】を【${
-                  upItem.name
-                }】に強化しますか？\n※元の装備は消費されます。\n消費: ${getCostDisplay(
-                  upCost
-                )}`
-              )
-            ) {
+            if (confirm(`【${item.name}】を【${upItem.name}】に強化しますか？\n※元の装備は消費されます。\n消費: ${getCostDisplay(upCost)}`)) {
               this.upgradeItem(key, item.upgradeTo, type, upCost);
               if (onUpdate) onUpdate();
             }
@@ -1501,25 +1478,31 @@ const game = {
     this.renderStorage();
   },
   // インベントリの表示
+  // game.js 内の renderInventory をこれに置き換えてください
   renderInventory() {
     const container = document.getElementById("inventory-list");
     if (!container) return;
     container.innerHTML = "";
 
-    // 素材を表示
-    const matTypes = ["scrap", "chip", "herb", "data"];
+    // ★修正: "re_data" をリストに追加しました
+    const matTypes = ["scrap", "chip", "herb", "data", "re_data"];
+    
     matTypes.forEach((mat) => {
       const amount = this.player.mats[mat] || 0;
       if (amount > 0) {
         const el = document.createElement("div");
         el.className = "item-row";
         el.style.fontSize = "12px";
-        el.innerHTML = `<span>${mat.toUpperCase()}: ${amount}</span><button onclick="game.moveToStorage('${mat}', ${amount})" style="padding: 2px 6px; font-size: 10px;">→ Storage</button>`;
+        
+        // 表示名を少し見やすく調整 (re_dataの場合の表示)
+        const displayName = mat === "re_data" ? "RE_DATA" : mat.toUpperCase();
+
+        el.innerHTML = `<span>${displayName}: ${amount}</span><button onclick="game.moveToStorage('${mat}', ${amount})" style="padding: 2px 6px; font-size: 10px;">→ Storage</button>`;
         container.appendChild(el);
       }
     });
 
-    // インベントリ内の装備を表示（現在は装備をインベントリに保存する機能がないため、将来の拡張用）
+    // インベントリ内の装備を表示
     if (this.player.inventory.length > 0) {
       this.player.inventory.forEach((item, idx) => {
         const el = document.createElement("div");
@@ -1538,20 +1521,24 @@ const game = {
     }
   },
   // 保管庫の表示
+ // game.js 内の renderStorage をこれに置き換えてください
   renderStorage() {
     const container = document.getElementById("storage-list");
     if (!container) return;
     container.innerHTML = "";
 
-    // 保管庫の素材を表示
-    const matTypes = ["scrap", "chip", "herb", "data"];
+    // ★修正: "re_data" をリストに追加しました
+    const matTypes = ["scrap", "chip", "herb", "data", "re_data"];
+    
     matTypes.forEach((mat) => {
       const amount = this.storage.materials[mat] || 0;
       if (amount > 0) {
         const el = document.createElement("div");
         el.className = "item-row";
         el.style.fontSize = "12px";
-        el.innerHTML = `<span>${mat.toUpperCase()}: ${amount}</span><div><button onclick="game.moveFromStorage('${mat}', 1)" style="padding: 2px 6px; font-size: 10px; margin-right: 2px;">← 1</button><button onclick="game.takeFromStorage('${mat}')" style="padding: 2px 6px; font-size: 10px;">← All</button></div>`;
+        const displayName = mat === "re_data" ? "RE_DATA" : mat.toUpperCase();
+
+        el.innerHTML = `<span>${displayName}: ${amount}</span><div><button onclick="game.moveFromStorage('${mat}', 1)" style="padding: 2px 6px; font-size: 10px; margin-right: 2px;">← 1</button><button onclick="game.takeFromStorage('${mat}')" style="padding: 2px 6px; font-size: 10px;">← All</button></div>`;
         container.appendChild(el);
       }
     });
