@@ -753,7 +753,15 @@ const battle = (function () {
         }
         if (e.deck.length === 0 && e.initialDeckList) {
           e.deck = JSON.parse(JSON.stringify(e.initialDeckList));
+
+          // ★修正: 手札にすでにSPカードがある場合、補充デッキからSPを除外する
+          // これにより「使い切りではない」が「同時に2枚は持てない」状態を作る
+          if (e.hand.some((c) => c.isSP)) {
+            e.deck = e.deck.filter((c) => !c.isSP);
+          }
+
           shuffle(e.deck);
+          log(`[System] ${e.name}'s Deck Recycled`);
         }
         if (e.deck.length > 0) {
           e.hand.push(e.deck.pop());
@@ -1466,9 +1474,14 @@ const battle = (function () {
           result = "LOSE";
         } else {
           if (pCard && eCard) {
-            player.hp -= 2;
-            enemy.hp -= 2;
-            log("Draw (Clash)! Both take 2 dmg.");
+            // ★修正: ガード同士(Guard)の場合はダメージなし、それ以外(Attack/Break)は衝撃ダメージ
+            if (pCard.type === TYPE.ATTACK) {
+              player.hp -= 2;
+              enemy.hp -= 2;
+              log("Draw (Attack)! Both take 2 dmg.");
+            } else {
+              log("Draw (clash)! No damage.");
+            }
           }
         }
       } else {

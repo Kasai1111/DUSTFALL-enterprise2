@@ -1325,6 +1325,7 @@ const game = {
         }
 
         // 3. 強化ボタン
+        // 3. 強化ボタン
         if (isOwned && item.upgradeTo && db[item.upgradeTo]) {
           const upItem = db[item.upgradeTo];
           const upCost = upItem.upgrade_cost;
@@ -1346,18 +1347,26 @@ const game = {
           };
           actionsDiv.appendChild(btnUpPreview);
 
+          // ★修正: 素材コストを表示するエリアを作成
+          const costInfo = document.createElement("div");
+          costInfo.className = "upgrade-cost-info";
+          // 素材不足なら赤色、足りていれば黄色などで表示
+          costInfo.style.color = canUpgrade ? "#f2cc60" : "#ff5555"; 
+          costInfo.innerHTML = `<span>Req:</span> ${getCostDisplay(upCost)}`;
+          actionsDiv.appendChild(costInfo);
+
           const btnUpgrade = document.createElement("button");
           btnUpgrade.innerText = "強化";
           btnUpgrade.className = "btn-craft";
           btnUpgrade.style.background = "#5a3a00";
           btnUpgrade.style.borderColor = "#f2cc60";
-
-          // ★追加: ここでホバー時に必要な素材を表示するようにしました
-          btnUpgrade.title = `必要素材: ${getCostDisplay(upCost)}`;
+          
+          // ホバーのtitle属性は削除（可視化したため不要）
+          // btnUpgrade.title = ... 削除
 
           if (!canUpgrade) {
             btnUpgrade.disabled = true;
-            btnUpgrade.innerText = "強化素材不足";
+            btnUpgrade.innerText = "素材不足";
           }
 
           btnUpgrade.onclick = (e) => {
