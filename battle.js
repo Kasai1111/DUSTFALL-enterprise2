@@ -205,7 +205,15 @@ const battle = (function () {
       maxHp: MAX_HP,
       pos: MAX_POSTURE,
       maxPos: MAX_POSTURE,
-      ep: 5,
+
+      // ▼▼▼ 修正: ステータスの初期化 ▼▼▼
+      maxEp: 8, // デフォルト値
+      ep: 5, // 初期EP
+      baseAtk: 0,
+      baseDef: 0,
+      baseBreak: 0,
+      // ▲▲▲ 修正ここまで ▲▲▲
+
       sp: 0,
       deck,
       hand: [],
@@ -653,7 +661,7 @@ const battle = (function () {
         log(`>> ${e.name} recovers DOUBLE EP (Iron Will)!`);
         e.doubleEpNext = false;
       }
-      e.ep = Math.min(MAX_EP, e.ep + recovery);
+      e.ep = Math.min(e.maxEp, e.ep + recovery);
       e.sp = Math.min(MAX_SP, e.sp + 1);
 
       if (e.tags.has("INFECTED")) {
@@ -1418,7 +1426,8 @@ const battle = (function () {
       if (result === "DRAW") {
         if (prevResult === "WIN") {
           const dmg = applyDmg(
-            enemy,
+            player, // Attacker
+            enemy, // Target
             pCard,
             1.5 * pBonusMul,
             pFlatDmgBonus,
@@ -1432,7 +1441,8 @@ const battle = (function () {
           result = "WIN";
         } else if (prevResult === "LOSE") {
           const dmg = applyDmg(
-            player,
+            enemy, // Attacker
+            player, // Target
             eCard,
             1.5 * eBonusMul,
             eFlatDmgBonus,
@@ -1454,6 +1464,7 @@ const battle = (function () {
       } else {
         if (result === "WIN") {
           const dmg = applyDmg(
+            player,
             enemy,
             pCard,
             pMul * pBonusMul,
@@ -1467,6 +1478,7 @@ const battle = (function () {
           }
         } else if (result === "LOSE") {
           const dmg = applyDmg(
+            enemy,
             player,
             eCard,
             eMul * eBonusMul,
@@ -1532,7 +1544,7 @@ const battle = (function () {
   async function resolveInstantAbility(user, opponent, abilityId) {
     switch (abilityId) {
       case "EP_CHARGE":
-        user.ep = Math.min(MAX_EP, user.ep + 3);
+        user.ep = Math.min(user.maxEp, user.ep + 3);
         log(`>> [Instant] ${user.name} recovered 3 EP!`);
         break;
       case "SMOKE":
@@ -1602,7 +1614,7 @@ const battle = (function () {
         opponent.ep -= drainAmount;
 
         // 自分のEPに加算する（最大値MAX_EPを超えないように）
-        user.ep = Math.min(MAX_EP, user.ep + drainAmount);
+        user.ep = Math.min(user.maxEp, user.ep + drainAmount);
 
         log(`>> [Energy Drain] Drained ${drainAmount} EP from opponent!`);
         break;
@@ -1665,7 +1677,9 @@ const battle = (function () {
     }
     const rawAtk = (attackCard.dmg || 0) * attackerMul;
     const reducedAtk = Math.floor(rawAtk * 0.5);
-    const armor = guardCard.arm || 0;
+    const baseArmor = defender.baseDef || 0;
+    const cardArmor = guardCard.arm || 0;
+    const armor = cardArmor + baseArmor;
     const finalDmg = Math.max(0, reducedAtk - armor);
 
     if (finalDmg > 0) {
@@ -1708,7 +1722,14 @@ const battle = (function () {
     });
   }
 
-  function applyDmg(target, card, mul, flatBonus = 0, forceBreak = false) {
+  function applyDmg(
+    attacker,
+    target,
+    card,
+    mul,
+    flatBonus = 0,
+    forceBreak = false
+  ) {
     if (!card && flatBonus === 0) return 0;
 
     if (target.isManaBarrier && card && !card.isSP) {
@@ -1727,8 +1748,10 @@ const battle = (function () {
     if (target.burnout && !target.breakState) finalMul *= 1.5;
 
     let dmg = 0;
-    if (card && card.type !== TYPE.BREAK) {
-      dmg = Math.floor((card.dmg || 0) * finalMul);
+    if (card && (card.type === TYPE.ATTACK || card.type === TYPE.SP)) {
+      const baseVal = attacker.baseAtk || 0;
+      const cardVal = card.dmg || 0;
+      dmg = Math.floor((baseVal + cardVal) * finalMul);
     }
 
     if (flatBonus > 0) {
@@ -1736,8 +1759,10 @@ const battle = (function () {
     }
 
     let pos = 0;
-    if (card) {
-      pos = Math.floor((card.pos || 0) * finalMul);
+    if (card && card.type !== TYPE.GUARD) {
+      const basePos = attacker.baseBreak || 0;
+      const cardPos = card.pos || 0;
+      pos = Math.floor((basePos + cardPos) * finalMul);
     }
 
     target.hp -= dmg;
@@ -1778,13 +1803,14 @@ const battle = (function () {
       document.getElementById(`${prefix}-pos`).innerText = Math.floor(e.pos);
 
       const hpPercent = (e.hp / e.maxHp) * 100;
+      const posPercent = (e.pos / e.maxPos) * 100;
       document.getElementById(`${prefix}-hp-bar`).style.width = `${Math.max(
         0,
         hpPercent
       )}%`;
       document.getElementById(`${prefix}-pos-bar`).style.width = `${Math.max(
         0,
-        (e.pos / MAX_POSTURE) * 100
+        posPercent
       )}%`;
       document.getElementById(`${prefix}-burnout`).style.display = e.burnout
         ? "inline"
@@ -2154,12 +2180,22 @@ const battle = (function () {
     // HPなどのステータスを同期
     player.hp = game.player.hp;
     player.maxHp = game.player.maxHp;
+    // ▼▼▼ 追加: プレイヤーの基礎ステータスと最大EPを同期 ▼▼▼
+    player.baseAtk = game.player.baseAtk || 0;
+    player.baseDef = game.player.baseDef || 0;
+    player.baseBreak = game.player.baseBreak || 0;
+    player.maxEp = game.player.maxEp || 8;
+    // ▲▲▲ 追加ここまで ▲▲▲
 
     // 2. 敵データの同期
     // マップ上の敵情報をベースにするか、新規生成するか
     if (bossData) {
       // ボスデータが渡された場合はそれを使用
       enemy = bossData;
+      if (typeof enemy.maxEp === "undefined") enemy.maxEp = 8;
+      if (typeof enemy.baseAtk === "undefined") enemy.baseAtk = 0;
+      if (typeof enemy.baseDef === "undefined") enemy.baseDef = 0;
+      if (typeof enemy.baseBreak === "undefined") enemy.baseBreak = 0;
       // 必要な初期化（デッキ構築など）がまだならここで行う
       // ただしボスデータが不完全な場合は補完が必要
       if (!enemy.deck) {

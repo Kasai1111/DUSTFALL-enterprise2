@@ -467,6 +467,12 @@ const game = {
     stamina: 100,
     maxStamina: 100,
     playerBlock: 0,
+    // ▼▼▼ 追加: 基礎ステータス ▼▼▼
+    baseAtk: 2, // 基礎攻撃力 (Attackカードに加算)
+    baseDef: 2, // 基礎防御力 (Guardカードに加算)
+    baseBreak: 2, // 基礎崩し力 (Breakカードに加算)
+    maxEp: 8, // 最大EP (デフォルトは8)
+    // ▲▲▲ 追加ここまで ▲▲▲
     loadout: {
       weapon: "rotten_pipe",
       armor: "tattered_clothes",
@@ -590,9 +596,15 @@ const game = {
       name: "THE BOSS",
       hp: 300,
       maxHp: 300,
+      // ▼▼▼ 追加: 本番ボスにもステータスを設定 ▼▼▼
+      maxEp: 9,
+      ep: 9,
+      baseAtk: 30,
+      baseDef: 2,
+      baseBreak: 5,
+      // ▲▲▲ 追加ここまで ▲▲▲
       pos: 50,
       maxPos: 50,
-      ep: 8,
       sp: 0,
       isBroken: false,
       brokenTurns: 0,
@@ -660,9 +672,15 @@ const game = {
       name: "THE BOSS",
       hp: 300,
       maxHp: 300,
+      // ▼▼▼ 追加: 本番ボスにもステータスを設定 ▼▼▼
+      maxEp: 9,
+      ep: 9,
+      baseAtk: 30,
+      baseDef: 2,
+      baseBreak: 5,
+      // ▲▲▲ 追加ここまで ▲▲▲
       pos: 50,
       maxPos: 50,
-      ep: 8,
       sp: 0,
       isBroken: false,
       brokenTurns: 0,
@@ -1064,6 +1082,9 @@ const game = {
     document.getElementById("base-day").innerText = this.day;
     document.getElementById("base-hp").innerText = this.player.hp;
     document.getElementById("base-maxhp").innerText = this.player.maxHp;
+    document.getElementById("base-baseAtk").innerText = this.player.baseAtk;
+    document.getElementById("base-baseBreak").innerText = this.player.baseBreak;
+    document.getElementById("base-baseDef").innerText = this.player.baseDef;
     const m = this.player.mats;
     document.getElementById(
       "base-mats"
