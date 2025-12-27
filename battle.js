@@ -400,9 +400,14 @@ const battle = (function () {
 
   // 予測関数: プレイヤーがどの手札を使う可能性が高いか（簡易確率モデル）
   function predictPlayerHand(p, e) {
-    // SMOKE FIX: Check if observer (e) is blinded by stealth
+    // 相手がバーンアウト中なら、手札は「なし」とみなす
+    if (p.burnout) {
+      return [{ type: "NONE", cost: 0, isEmpty: true }];
+    }
+
+    // 視界妨害(SMOKE)を受けている場合
     if (e.stealthTurns > 0) {
-      // Blinded! Return dummy data (average assumption)
+      // 平均的な手札を想定（ダミーデータ）
       return [
         { type: "Attack", cost: 3 },
         { type: "Guard", cost: 2 },
@@ -411,7 +416,7 @@ const battle = (function () {
     }
 
     let predictedHand = [...p.hand];
-    if (p.secret) predictedHand.push({ ...p.secret, cost: 3 }); // Secretは平均値として扱う
+    if (p.secret) predictedHand.push({ ...p.secret, cost: 3 }); // Secretは平均コスト3として扱う
     if (p.reservedSP && p.sp >= MAX_SP) predictedHand.push(p.reservedSP);
 
     // ジャミングされたカードは除外
@@ -419,24 +424,81 @@ const battle = (function () {
       (_, i) => !p.jammedIndices.includes(i)
     );
 
+    // 手札が空の場合の安全策
+    if (predictedHand.length === 0) {
+      predictedHand.push({ type: "NONE", cost: 0, isEmpty: true });
+    }
+
     return predictedHand;
   }
 
-  // シミュレーション＆スコアリング
+  // AI思考エンジン
   function runAdvancedAI(ai, opponent, weights) {
     const opponentForcedCard = opponent.forcedSlot1;
-
-    // Check if player *can* use SP
-    const playerHasSPCard = opponent.hand.some((c) => c.isSP);
-    const playerHasGauge = opponent.sp >= MAX_SP;
-    const playerCanUseSP = playerHasSPCard && playerHasGauge;
-
     const aiIsLowHP = ai.hp <= ai.maxHp * 0.4;
     const playerIsLowHP = opponent.hp <= opponent.maxHp * 0.4;
 
-    let decidedToCounter = false;
+    // --- 1. 相手がバーンアウト中なら「最大火力」を叩き込む (処刑モード) ---
+    if (opponent.burnout) {
+      // 相手は防御できないので、単純にダメージが最大になるペアを探す
+      let bestDmg = -1;
+      let bestPair = [null, null];
 
-    // 1. カウンター判断
+      // 全カード（手札+SP）を取得
+      let availableCards = [...ai.hand];
+      if (ai.reservedSP && ai.sp >= MAX_SP && !ai.hasUsedSP) {
+        availableCards.push(ai.reservedSP);
+      }
+      // ジャミング除外
+      availableCards = availableCards.filter(
+        (c, i) => !ai.jammedIndices.includes(i)
+      );
+
+      // ペア総当たり
+      for (let i = 0; i < availableCards.length; i++) {
+        for (let j = 0; j < availableCards.length; j++) {
+          if (i === j) continue; // 同じカードは使えない
+          const c1 = availableCards[i];
+          const c2 = availableCards[j];
+
+          // コストチェック
+          const cost = getRealCost(ai, c1.cost) + getRealCost(ai, c2.cost);
+          if (cost > ai.ep) continue;
+          if ((c1.isSP || c2.isSP) && ai.sp < MAX_SP) continue;
+
+          // ダメージ計算（概算）
+          // 相手バーンアウト時は Slot1勝利(x1.2) -> Slot2(x1.5) がほぼ確定
+          // Slot1
+          let dmg1 = c1.dmg || 0;
+          if (c1.type === TYPE.ATTACK || c1.type === TYPE.SP) dmg1 *= 1.5; // Burnout補正
+
+          // Slot2 (Slot1勝利前提)
+          let dmg2 = c2.dmg || 0;
+          if (c2.type === TYPE.ATTACK || c2.type === TYPE.SP) dmg2 *= 1.2 * 1.5; // WinBonus * Burnout補正
+
+          // アビリティ補正（とどめを刺せるなら加点）
+          if (c2.ability === "FATAL_THRUST" && hasTag(opponent, "ARMOR_BROKEN"))
+            dmg2 *= 3;
+          if (c2.ability === "FIRE_BLAST" && hasTag(opponent, "OILED"))
+            dmg2 *= 2;
+
+          const totalDmg = dmg1 + dmg2;
+
+          if (totalDmg > bestDmg) {
+            bestDmg = totalDmg;
+            bestPair = [c1, c2];
+          }
+        }
+      }
+      // バーンアウト中でも攻撃カードがない場合は後続のロジックへ
+      if (bestDmg > 0) {
+        return { slots: bestPair, action: "COMMIT" };
+      }
+    }
+
+    // --- 2. カウンター判断 (相手がSPを撃てそうで、かつ自分がピンチor性格的に好む場合) ---
+    const playerCanUseSP =
+      opponent.hand.some((c) => c.isSP) && opponent.sp >= MAX_SP;
     if (!ai.hasUsedCounter && ai.ep >= 4) {
       let counterProbability = weights.counterBias;
 
@@ -444,11 +506,11 @@ const battle = (function () {
         let desperationFactor = 0;
         if (aiIsLowHP) desperationFactor += 0.4;
         if (playerIsLowHP) desperationFactor += 0.2;
-        if (ai.hp > ai.maxHp * 0.7) desperationFactor -= 0.1;
 
+        // 相手がSPを撃てるなら確率アップ
         counterProbability = Math.min(
           0.95,
-          counterProbability + 0.3 + desperationFactor
+          counterProbability + 0.4 + desperationFactor
         );
 
         if (Math.random() < counterProbability) {
@@ -457,11 +519,13 @@ const battle = (function () {
       }
     }
 
-    // 2. カード選択
+    // --- 3. 通常思考 (シミュレーション) ---
+    // 手札の準備
     let hand = ai.hand.map((c, i) => ({ ...c, originalIndex: i }));
     if (ai.reservedSP && ai.sp >= MAX_SP && !ai.hasUsedSP) {
       hand.push({ ...ai.reservedSP, originalIndex: -1 });
     }
+    // ジャミング除外
     hand = hand.filter((c) =>
       c.originalIndex === -1
         ? true
@@ -470,44 +534,51 @@ const battle = (function () {
 
     let validPairs = [];
 
-    // If AI's Slot 1 is FORCED:
+    // 強制スロットがある場合
     if (ai.forcedSlot1) {
       const fCard = ai.forcedSlot1;
       for (let j = 0; j < hand.length; j++) {
         validPairs.push([fCard, hand[j]]);
         validPairs.push([fCard, null]);
       }
-      validPairs.push([fCard, null]); // Just in case hand is empty
+      validPairs.push([fCard, null]);
     } else {
-      // Normal logic
+      // 全ペア生成
       for (let i = 0; i < hand.length; i++) {
         for (let j = 0; j < hand.length; j++) {
           if (i === j) continue;
           validPairs.push([hand[i], hand[j]]);
         }
         validPairs.push([hand[i], null]);
-        validPairs.push([null, hand[i]]);
+        validPairs.push([null, hand[i]]); // Slot1空けパターン
       }
+      // 何も出さないパターンも一応入れる
       validPairs.push([null, null]);
     }
 
-    // Budget Filtering
+    // コスト・条件でフィルタリング
     validPairs = validPairs.filter((pair) => {
       let c1 = pair[0] ? getRealCost(ai, pair[0].cost) : 0;
       let c2 = pair[1] ? getRealCost(ai, pair[1].cost) : 0;
+
+      // EP不足チェック
       if (c1 + c2 > ai.ep) return false;
+
+      // SP条件チェック
       if (pair[0] && pair[0].isSP && ai.sp < MAX_SP) return false;
       if (pair[1] && pair[1].isSP && ai.sp < MAX_SP) return false;
+
       return true;
     });
 
+    // 何も出せないなら待機
     if (validPairs.length === 0) return { slots: [null, null], action: "WAIT" };
 
     let bestScore = -Infinity;
     let bestPair = validPairs[0];
 
+    // プレイヤーの手札予測
     const playerLikelyCards = predictPlayerHand(opponent, ai);
-    const wantsToBluff = playerCanUseSP && !decidedToCounter && ai.ep >= 4;
 
     validPairs.forEach((pair) => {
       let score = 0;
@@ -517,11 +588,26 @@ const battle = (function () {
         (card1 ? getRealCost(ai, card1.cost) : 0) +
         (card2 ? getRealCost(ai, card2.cost) : 0);
 
-      if (wantsToBluff) {
-        if (cost === 4) score += 60;
-        else if (cost < 4) score -= 30;
+      // --- 合理性評価 (Rationality) ---
+
+      // A. SPカード使用への特大ボーナス
+      if (card1?.isSP || card2?.isSP) {
+        score += 300; // SPは出すだけで強い
       }
 
+      // B. スロット1放棄への特大ペナルティ
+      // Slot1が空で、Slot2がある場合、ルール上不利(Slot2がx0.25倍になる)なので避ける
+      if (!card1 && card2) {
+        score -= 2000;
+        // ただし、戦略的意図（性格ENFPなど）がある場合は性格補正でカバーされるかもしれないが、基本はナシ
+      }
+
+      // C. EP効率
+      const remainingEP = ai.ep - cost;
+      if (remainingEP === 0) score += 10 * weights.efficiency; // きれいに使い切るのを好む
+      if (remainingEP > 2) score -= 5 * weights.efficiency; // 余らせすぎない
+
+      // D. Trinity ボーナス
       if (
         card1 &&
         ai.trinityTarget &&
@@ -531,87 +617,86 @@ const battle = (function () {
         score += 50 * weights.trinityFocus;
       }
 
-      const remainingEP = ai.ep - cost;
-      if (remainingEP === 0) score -= 10 * weights.efficiency;
-      if (remainingEP > 2) score += 5 * weights.efficiency;
-
-      // Simulation
+      // --- シミュレーション (Simulation) ---
       let totalSims = 0;
-
       const simTargetCards = opponentForcedCard
         ? [opponentForcedCard]
         : playerLikelyCards;
 
       simTargetCards.forEach((pCard) => {
         totalSims++;
-        // Slot 1 Simulation
-        // --- FIX: Phantom Weight Logic ---
+
+        // Slot 1 判定
+        let s1Res = "DRAW";
         let aiCost = card1 ? card1.cost : 0;
-        let pCost = pCard ? pCard.cost : 0;
+        let pCost = pCard && !pCard.isEmpty ? pCard.cost : 0;
 
         if (ai.isPhantomWeight && card1) aiCost = 6;
         if (opponent.isPhantomWeight && pCard) pCost = 6;
-        // ---------------------------------
 
-        let s1Res = "DRAW";
-        if (card1 && pCard) {
+        if (card1 && pCard && !pCard.isEmpty) {
           if (WIN_MAP[card1.type] === pCard.type) s1Res = "WIN";
           else if (WIN_MAP[pCard.type] === card1.type) s1Res = "LOSE";
           else {
-            // Draw Case: Compare Adjusted Costs
+            // Draw
             if (aiCost > pCost) s1Res = "WIN";
             else if (pCost > aiCost) s1Res = "LOSE";
           }
-        } else if (card1) s1Res = "WIN";
-
-        // --- FIX: Polarity Shift Logic Check ---
-        let simPolarityReversed = isPolarityReversed;
-        if (s1Res === "WIN" && card1 && card1.ability === "POLARITY_SHIFT") {
-          simPolarityReversed = !simPolarityReversed;
+        } else if (card1 && (!pCard || pCard.isEmpty)) {
+          s1Res = "WIN"; // 相手が出してこなければ勝ち
+        } else if (!card1 && pCard && !pCard.isEmpty) {
+          s1Res = "LOSE"; // 自分が出さなければ負け
         }
-        // ---------------------------------------
 
+        // 極性反転チェック
+        let simPolarityReversed = false;
+        if (s1Res === "WIN" && card1 && card1.ability === "POLARITY_SHIFT") {
+          simPolarityReversed = true;
+        }
+
+        // Slot 1 結果によるスコア加算
         if (s1Res === "WIN") {
-          score += 10;
-          if (opponentForcedCard) score += 500;
-
+          score += 50;
           if (card1.ability) {
             const ab = ABILITIES[card1.ability];
-            if (ab.type === "SETUP") score += 20 * weights.setupPriority;
-            if (ab.type === "INSTANT") score += 10;
+            if (ab.type === "SETUP") score += 30 * weights.setupPriority;
+            if (ab.type === "INSTANT") score += 20;
           }
         } else if (s1Res === "LOSE") {
-          score -= 15 * weights.defense;
-          if (opponentForcedCard) score -= 500;
+          score -= 50 * weights.defense; // 負けを嫌う
         }
 
-        // Slot 2
+        // Slot 2 シミュレーション (Slot1の結果による倍率変動を加味)
         playerLikelyCards.forEach((pCard2) => {
           let s2Res = "DRAW";
-          if (card2 && pCard2) {
-            // --- FIX: Polarity Shift Applied to S2 Logic ---
+          if (card2 && pCard2 && !pCard2.isEmpty) {
             if (simPolarityReversed) {
-              // Inverted Win Condition
-              if (WIN_MAP[pCard2.type] === card2.type)
-                s2Res = "WIN"; // Originally Lose -> Win
-              else if (WIN_MAP[card2.type] === pCard2.type) s2Res = "LOSE"; // Originally Win -> Lose
+              // 反転
+              if (WIN_MAP[pCard2.type] === card2.type) s2Res = "WIN";
+              else if (WIN_MAP[card2.type] === pCard2.type) s2Res = "LOSE";
             } else {
-              // Normal Win Condition
+              // 通常
               if (WIN_MAP[card2.type] === pCard2.type) s2Res = "WIN";
               else if (WIN_MAP[pCard2.type] === card2.type) s2Res = "LOSE";
             }
-            // -----------------------------------------------
+          } else if (card2 && (!pCard2 || pCard2.isEmpty)) {
+            s2Res = "WIN";
           }
+
           if (s2Res === "WIN") {
             let dmg = card2.dmg || 0;
-            if (s1Res === "WIN") dmg *= 1.2;
-            else if (s1Res === "LOSE") dmg *= 0.25;
-            score += dmg * weights.aggression;
+            // コンボ倍率計算
+            let multiplier = 1.0;
+            if (s1Res === "WIN") multiplier = 1.2;
+            else if (s1Res === "LOSE") multiplier = 0.25;
+
+            // 性格ごとの攻撃性
+            score += dmg * multiplier * weights.aggression;
 
             if (card2.ability) {
               const ab = ABILITIES[card2.ability];
-              if (ab.type === "EXECUTE" && opponent.tags.has(ab.reqTag)) {
-                score += 100;
+              if (ab.type === "EXECUTE" && hasTag(opponent, ab.reqTag)) {
+                score += 150; // シナジー発動は超優先
               }
             }
           }
