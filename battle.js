@@ -272,12 +272,22 @@ const battle = (function () {
 
   function initBattle() {
     player = createEntity("Player", selectedWeapon, selectedArmor, selectedAcc);
-    const wKeys = Object.keys(EQUIPMENT.WEAPONS);
-    const aKeys = Object.keys(EQUIPMENT.ARMORS);
-    const accKeys = Object.keys(EQUIPMENT.GADGETS);
+
+    // ★修正: 敵の装備抽選リストから isUpgraded 属性を持つものを除外する
+    const wKeys = Object.keys(EQUIPMENT.WEAPONS).filter(
+      (k) => !EQUIPMENT.WEAPONS[k].isUpgraded
+    );
+    const aKeys = Object.keys(EQUIPMENT.ARMORS).filter(
+      (k) => !EQUIPMENT.ARMORS[k].isUpgraded
+    );
+    const accKeys = Object.keys(EQUIPMENT.GADGETS).filter(
+      (k) => !EQUIPMENT.GADGETS[k].isUpgraded
+    );
+
     const ew = wKeys[Math.floor(Math.random() * wKeys.length)];
     const ea = aKeys[Math.floor(Math.random() * aKeys.length)];
     const eacc = accKeys[Math.floor(Math.random() * accKeys.length)];
+
     enemy = createEntity("Enemy", ew, ea, eacc);
     const pTag = document.getElementById("e-personality");
     if (enemy.personalityWord) {
@@ -1847,7 +1857,7 @@ const battle = (function () {
         const badge = document.createElement("span");
         badge.className = "tag-badge";
         badge.style.background = "#90a4ae";
-        badge.innerText = `COST OVERRIDE`;
+        badge.innerText = `幻影質量`;
         tagContainer.appendChild(badge);
       }
     });
@@ -2206,9 +2216,16 @@ const battle = (function () {
         enemy.tags = new Set();
       }
     } else if (mapEntity && mapEntity.type === "enemy") {
-      const wKeys = Object.keys(EQUIPMENT.WEAPONS);
-      const aKeys = Object.keys(EQUIPMENT.ARMORS);
-      const gKeys = Object.keys(EQUIPMENT.GADGETS);
+      const wKeys = Object.keys(EQUIPMENT.WEAPONS).filter(
+        (k) => !EQUIPMENT.WEAPONS[k].isUpgraded
+      );
+      const aKeys = Object.keys(EQUIPMENT.ARMORS).filter(
+        (k) => !EQUIPMENT.ARMORS[k].isUpgraded
+      );
+      const gKeys = Object.keys(EQUIPMENT.GADGETS).filter(
+        (k) => !EQUIPMENT.GADGETS[k].isUpgraded
+      );
+
       const ew = wKeys[Math.floor(Math.random() * wKeys.length)];
       const ea = aKeys[Math.floor(Math.random() * aKeys.length)];
       const eg = gKeys[Math.floor(Math.random() * gKeys.length)];

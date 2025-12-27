@@ -1633,3 +1633,16 @@ button {
   font-family: inherit;
   animation: softGlow 2.5s ease-in-out infinite;
 }
+/* --- style.css 末尾に追加 --- */
+
+/* 強化済みアイテムの表示色 */
+.item-row span[style*="#f2cc60"] {
+  text-shadow: 0 0 5px rgba(242, 204, 96, 0.4);
+}
+
+/* 強化データ表示 */
+#base-mats,
+#explore-mats {
+  font-size: 0.85rem;
+  color: #ccc;
+}

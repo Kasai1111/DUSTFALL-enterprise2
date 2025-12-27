@@ -202,11 +202,15 @@ const ABILITIES = {
   },
 };
 
+/* --- game.js 内の EQUIPMENT 定義をすべて以下に置き換えてください --- */
+
 const EQUIPMENT = {
   WEAPONS: {
-    rotten_pipe: {
+    // --- Base Weapons ---
+    腐敗した鉄パイプ: {
       name: "腐敗した鉄パイプ",
       craft_cost: { scrap: 1 },
+      upgradeTo: "rotten_pipe_plus",
       cards: [
         { type: TYPE.ATTACK, cost: 1, dmg: 6, pos: 2 },
         { type: TYPE.ATTACK, cost: 2, dmg: 8, pos: 2 },
@@ -217,6 +221,7 @@ const EQUIPMENT = {
     鉄塊の大剣: {
       name: "鉄塊の大剣",
       craft_cost: { scrap: 3 },
+      upgradeTo: "greatsword_plus",
       cards: [
         { type: TYPE.ATTACK, cost: 5, dmg: 18, pos: 5, ability: "GRAVITY" },
         {
@@ -233,6 +238,7 @@ const EQUIPMENT = {
     熱断の刀: {
       name: "熱断の刀",
       craft_cost: { scrap: 5, chip: 2 },
+      upgradeTo: "katana_plus",
       cards: [
         { type: TYPE.ATTACK, cost: 1, dmg: 6, pos: 2, ability: "OIL_JAR" },
         { type: TYPE.ATTACK, cost: 2, dmg: 8, pos: 2, ability: "FIRE_BLAST" },
@@ -243,6 +249,7 @@ const EQUIPMENT = {
     スタンパイル: {
       name: "スタンパイル",
       craft_cost: { scrap: 5, herb: 2 },
+      upgradeTo: "pile_plus",
       cards: [
         { type: TYPE.BREAK, cost: 2, pos: 10, ability: "ARMOR_BREAK" },
         {
@@ -265,6 +272,7 @@ const EQUIPMENT = {
     ハックナイフ: {
       name: "ハックナイフ",
       craft_cost: { chip: 5, data: 1 },
+      upgradeTo: "knife_plus",
       cards: [
         {
           type: TYPE.ATTACK,
@@ -281,6 +289,7 @@ const EQUIPMENT = {
     共鳴ブラスター: {
       name: "共鳴ブラスター",
       craft_cost: { chip: 3, scrap: 5 },
+      upgradeTo: "blaster_plus",
       cards: [
         { type: TYPE.BREAK, cost: 2, pos: 5, ability: "SCAN" },
         { type: TYPE.ATTACK, cost: 2, dmg: 8, pos: 2, ability: "SONAR" },
@@ -288,12 +297,105 @@ const EQUIPMENT = {
         { type: TYPE.SP, cost: 6, dmg: 45, pos: 10, isSP: true },
       ],
     },
+    // --- Upgraded Weapons (isUpgraded: true) ---
+    rotten_pipe_plus: {
+      name: "鉄パイプ・補強",
+      isUpgraded: true,
+      upgrade_cost: { scrap: 5, chip: 1, re_data: 1 },
+      cards: [
+        { type: TYPE.ATTACK, cost: 1, dmg: 9, pos: 3 },
+        { type: TYPE.ATTACK, cost: 2, dmg: 12, pos: 3 },
+        { type: TYPE.GUARD, cost: 2, arm: 9 },
+        { type: TYPE.SP, cost: 4, dmg: 25, pos: 8, isSP: true },
+      ],
+    },
+    greatsword_plus: {
+      name: "剛剣『断罪』",
+      isUpgraded: true,
+      upgrade_cost: { scrap: 10, data: 2, re_data: 1 },
+      cards: [
+        { type: TYPE.ATTACK, cost: 6, dmg: 24, pos: 6, ability: "GRAVITY" },
+        {
+          type: TYPE.ATTACK,
+          cost: 4,
+          dmg: 18,
+          pos: 6,
+          ability: "DESPERATE_STRIKE",
+        },
+        { type: TYPE.BREAK, cost: 4, pos: 20 },
+        { type: TYPE.SP, cost: 7, dmg: 65, pos: 30, isSP: true },
+      ],
+    },
+    katana_plus: {
+      name: "灼刀・陽炎",
+      isUpgraded: true,
+      upgrade_cost: { scrap: 6, chip: 6, herb: 3, re_data: 1 },
+      cards: [
+        { type: TYPE.ATTACK, cost: 3, dmg: 10, pos: 3, ability: "OIL_JAR" },
+        { type: TYPE.ATTACK, cost: 3, dmg: 14, pos: 3, ability: "FIRE_BLAST" },
+        { type: TYPE.GUARD, cost: 2, arm: 10 },
+        { type: TYPE.SP, cost: 5, dmg: 45, pos: 10, isSP: true },
+      ],
+    },
+    pile_plus: {
+      name: "パイルバンカー・カスタム",
+      isUpgraded: true,
+      upgrade_cost: { scrap: 8, herb: 4, chip: 3, re_data: 1 },
+      cards: [
+        { type: TYPE.BREAK, cost: 3, pos: 14, ability: "ARMOR_BREAK" },
+        {
+          type: TYPE.ATTACK,
+          cost: 3,
+          dmg: 18,
+          pos: 8,
+          ability: "FATAL_THRUST",
+        },
+        {
+          type: TYPE.ATTACK,
+          cost: 5,
+          dmg: 25,
+          pos: 5,
+          ability: "POSTURE_BREAK_EXEC",
+        },
+        { type: TYPE.SP, cost: 6, dmg: 40, pos: 40, isSP: true },
+      ],
+    },
+    knife_plus: {
+      name: "コードブレイカー",
+      isUpgraded: true,
+      upgrade_cost: { chip: 10, data: 5, re_data: 1 },
+      cards: [
+        {
+          type: TYPE.ATTACK,
+          cost: 3,
+          dmg: 10,
+          pos: 2,
+          ability: "VIRUS_INSTALL",
+        },
+        { type: TYPE.ATTACK, cost: 2, dmg: 10, pos: 3, ability: "MEMORY_LEAK" },
+        { type: TYPE.BREAK, cost: 2, pos: 10, ability: "JAMMING" },
+        { type: TYPE.SP, cost: 4, dmg: 30, pos: 15, isSP: true },
+      ],
+    },
+    blaster_plus: {
+      name: "ハイレゾ・ブラスター",
+      isUpgraded: true,
+      upgrade_cost: { chip: 8, data: 4, scrap: 4, re_data: 1 },
+      cards: [
+        { type: TYPE.BREAK, cost: 2, pos: 10, ability: "SCAN" },
+        { type: TYPE.ATTACK, cost: 3, dmg: 12, pos: 3, ability: "SONAR" },
+        { type: TYPE.ATTACK, cost: 4, dmg: 20, pos: 6, ability: "ECHO_STRIKE" },
+        { type: TYPE.SP, cost: 6, dmg: 60, pos: 15, isSP: true },
+      ],
+    },
   },
   ARMORS: {
+    // --- Base Armors ---
     tattered_clothes: {
       name: "ボロボロの服",
       craft_cost: { scrap: 1 },
-      noise: 2, // 隠密性への影響
+      upgradeTo: "clothes_plus",
+      noise: 2,
       cards: [
         { type: TYPE.GUARD, cost: 2, arm: 8 },
         { type: TYPE.GUARD, cost: 1, arm: 5 },
@@ -303,7 +405,8 @@ const EQUIPMENT = {
     廃材の鎧: {
       name: "廃材の鎧",
       craft_cost: { scrap: 2 },
-      noise: 2, // 隠密性への影響(追加)
+      upgradeTo: "plate_armor",
+      noise: 2,
       cards: [
         { type: TYPE.GUARD, cost: 2, arm: 8, ability: "PREP_ATK" },
         { type: TYPE.GUARD, cost: 1, arm: 5 },
@@ -313,6 +416,7 @@ const EQUIPMENT = {
     光学迷彩コート: {
       name: "光学迷彩コート",
       craft_cost: { chip: 3, scrap: 2 },
+      upgradeTo: "cloak_plus",
       noise: 0,
       cards: [
         { type: TYPE.GUARD, cost: 2, arm: 6, ability: "SMOKE" },
@@ -323,6 +427,7 @@ const EQUIPMENT = {
     反応装甲: {
       name: "反応装甲",
       craft_cost: { scrap: 8, chip: 2 },
+      upgradeTo: "aegis_system",
       noise: 3,
       cards: [
         { type: TYPE.GUARD, cost: 4, arm: 20, ability: "IRON_WILL" },
@@ -333,6 +438,7 @@ const EQUIPMENT = {
     自動修復スーツ: {
       name: "自動修復スーツ",
       craft_cost: { herb: 5, chip: 2 },
+      upgradeTo: "regen_suit",
       noise: 1,
       cards: [
         { type: TYPE.GUARD, cost: 2, arm: 6, ability: "EMERGENCY_REPAIR" },
@@ -343,6 +449,7 @@ const EQUIPMENT = {
     EP炉心: {
       name: "EP炉心",
       craft_cost: { chip: 5, data: 2 },
+      upgradeTo: "arc_reactor",
       noise: 2,
       cards: [
         { type: TYPE.GUARD, cost: 2, arm: 8, ability: "EP_CHARGE" },
@@ -350,11 +457,80 @@ const EQUIPMENT = {
         { type: TYPE.GUARD, cost: 1, arm: 5 },
       ],
     },
+    // --- Upgraded Armors ---
+    clothes_plus: {
+      name: "冒険者の服",
+      isUpgraded: true,
+      upgrade_cost: { scrap: 4, herb: 2, re_data: 1 },
+      noise: 1,
+      cards: [
+        { type: TYPE.GUARD, cost: 2, arm: 12 },
+        { type: TYPE.GUARD, cost: 1, arm: 8 },
+        { type: TYPE.BREAK, cost: 1, pos: 10 },
+      ],
+    },
+    plate_armor: {
+      name: "重鉄板アーマー",
+      isUpgraded: true,
+      upgrade_cost: { scrap: 8, re_data: 1 },
+      noise: 2,
+      cards: [
+        { type: TYPE.GUARD, cost: 3, arm: 14, ability: "PREP_ATK" },
+        { type: TYPE.GUARD, cost: 1, arm: 9 },
+        { type: TYPE.BREAK, cost: 3, pos: 15 },
+      ],
+    },
+    cloak_plus: {
+      name: "ファントムクローク",
+      isUpgraded: true,
+      upgrade_cost: { chip: 6, data: 3, re_data: 1 },
+      noise: 0,
+      cards: [
+        { type: TYPE.GUARD, cost: 2, arm: 8, ability: "SMOKE" },
+        { type: TYPE.GUARD, cost: 1, arm: 15, ability: "FEINT" }, // Cost 3 -> 1 based on description "low cost"
+        { type: TYPE.GUARD, cost: 1, arm: 8 },
+      ],
+    },
+    aegis_system: {
+      name: "イージスシステム",
+      isUpgraded: true,
+      upgrade_cost: { scrap: 12, chip: 5, data: 2, re_data: 1 },
+      noise: 3,
+      cards: [
+        { type: TYPE.GUARD, cost: 5, arm: 30, ability: "IRON_WILL" },
+        { type: TYPE.GUARD, cost: 2, arm: 15, ability: "MANA_BARRIER" },
+        { type: TYPE.BREAK, cost: 3, pos: 12 },
+      ],
+    },
+    regen_suit: {
+      name: "リジェネ・スーツ",
+      isUpgraded: true,
+      upgrade_cost: { herb: 10, chip: 4, re_data: 1 },
+      noise: 1,
+      cards: [
+        { type: TYPE.GUARD, cost: 2, arm: 8, ability: "EMERGENCY_REPAIR" },
+        { type: TYPE.GUARD, cost: 3, arm: 15, ability: "PURIFY" },
+        { type: TYPE.GUARD, cost: 1, arm: 8 },
+      ],
+    },
+    arc_reactor: {
+      name: "アーク・リアクター",
+      isUpgraded: true,
+      upgrade_cost: { chip: 10, data: 5, re_data: 1 },
+      noise: 2,
+      cards: [
+        { type: TYPE.GUARD, cost: 2, arm: 12, ability: "EP_CHARGE" },
+        { type: TYPE.BREAK, cost: 2, pos: 15, ability: "ENERGY_DRAIN" },
+        { type: TYPE.GUARD, cost: 1, arm: 8 },
+      ],
+    },
   },
   GADGETS: {
+    // --- Base Gadgets ---
     tattered_amulet: {
-      name: "ボロボロのお守り", // "のの"となっていたため修正しました
+      name: "ボロボロのお守り",
       craft_cost: { scrap: 1 },
+      upgradeTo: "amulet_plus",
       cards: [
         { type: TYPE.BREAK, cost: 2, pos: 8 },
         { type: TYPE.BREAK, cost: 1, pos: 6 },
@@ -364,6 +540,7 @@ const EQUIPMENT = {
     解除キー: {
       name: "解除キー",
       craft_cost: { scrap: 2 },
+      upgradeTo: "override_key",
       cards: [
         { type: TYPE.BREAK, cost: 3, pos: 8, ability: "OVERCLOCK" },
         { type: TYPE.BREAK, cost: 3, pos: 8 },
@@ -373,6 +550,7 @@ const EQUIPMENT = {
     戦術バイザー: {
       name: "戦術バイザー",
       craft_cost: { chip: 2 },
+      upgradeTo: "goggles_plus",
       cards: [
         { type: TYPE.GUARD, cost: 2, arm: 6, ability: "PREDICTION" },
         { type: TYPE.BREAK, cost: 2, pos: 6, ability: "SCAN" },
@@ -382,6 +560,7 @@ const EQUIPMENT = {
     位相ズラし装置: {
       name: "位相ズラし装置",
       craft_cost: { data: 1, chip: 2 },
+      upgradeTo: "shifter_plus",
       cards: [
         { type: TYPE.BREAK, cost: 3, pos: 10, ability: "POLARITY_SHIFT" },
         {
@@ -397,6 +576,7 @@ const EQUIPMENT = {
     汚染アンプル: {
       name: "汚染アンプル",
       craft_cost: { herb: 3, scrap: 2 },
+      upgradeTo: "toxin_plus",
       cards: [
         { type: TYPE.ATTACK, cost: 1, dmg: 5, pos: 2, ability: "CORROSION" },
         { type: TYPE.BREAK, cost: 2, pos: 8, ability: "STUN_SHOT" },
@@ -406,10 +586,78 @@ const EQUIPMENT = {
     解析端末: {
       name: "解析端末",
       craft_cost: { data: 3 },
+      upgradeTo: "analyzer_plus",
       cards: [
         { type: TYPE.BREAK, cost: 3, pos: 10, ability: "DATA_DRAIN" },
         { type: TYPE.BREAK, cost: 2, pos: 5, ability: "SCAN" },
         { type: TYPE.GUARD, cost: 2, arm: 6 },
+      ],
+    },
+    // --- Upgraded Gadgets ---
+    amulet_plus: {
+      name: "形見のお守り",
+      isUpgraded: true,
+      upgrade_cost: { scrap: 3, herb: 1, re_data: 1 },
+      cards: [
+        { type: TYPE.BREAK, cost: 2, pos: 12 },
+        { type: TYPE.BREAK, cost: 1, pos: 9 },
+        { type: TYPE.ATTACK, cost: 1, dmg: 12 },
+      ],
+    },
+    override_key: {
+      name: "セキュリティ・オーバーライド",
+      isUpgraded: true,
+      upgrade_cost: { scrap: 5, chip: 5, data: 2, re_data: 1 },
+      cards: [
+        { type: TYPE.BREAK, cost: 4, pos: 10, ability: "OVERCLOCK" },
+        { type: TYPE.BREAK, cost: 3, pos: 14 },
+        { type: TYPE.ATTACK, cost: 5, dmg: 28, pos: 0 },
+      ],
+    },
+    goggles_plus: {
+      name: "未来予知ゴーグル",
+      isUpgraded: true,
+      upgrade_cost: { chip: 5, data: 4, re_data: 1 },
+      cards: [
+        { type: TYPE.GUARD, cost: 3, arm: 10, ability: "PREDICTION" },
+        { type: TYPE.BREAK, cost: 3, pos: 10, ability: "SCAN" },
+        { type: TYPE.ATTACK, cost: 3, dmg: 16, pos: 0 },
+      ],
+    },
+    shifter_plus: {
+      name: "次元干渉装置",
+      isUpgraded: true,
+      upgrade_cost: { data: 5, chip: 5, re_data: 1 },
+      cards: [
+        { type: TYPE.BREAK, cost: 3, pos: 15, ability: "POLARITY_SHIFT" },
+        {
+          type: TYPE.ATTACK,
+          cost: 3,
+          dmg: 18,
+          pos: 0,
+          ability: "PHANTOM_WEIGHT",
+        },
+        { type: TYPE.GUARD, cost: 2, arm: 10 },
+      ],
+    },
+    toxin_plus: {
+      name: "致死毒スプレー",
+      isUpgraded: true,
+      upgrade_cost: { herb: 8, scrap: 4, re_data: 1 },
+      cards: [
+        { type: TYPE.ATTACK, cost: 3, dmg: 12, pos: 0, ability: "CORROSION" },
+        { type: TYPE.BREAK, cost: 3, pos: 8, ability: "STUN_SHOT" },
+        { type: TYPE.GUARD, cost: 1, arm: 8 },
+      ],
+    },
+    analyzer_plus: {
+      name: "量子解析機",
+      isUpgraded: true,
+      upgrade_cost: { data: 8, chip: 2, re_data: 1 },
+      cards: [
+        { type: TYPE.BREAK, cost: 4, pos: 15, ability: "DATA_DRAIN" },
+        { type: TYPE.BREAK, cost: 2, pos: 10, ability: "SCAN" },
+        { type: TYPE.GUARD, cost: 2, arm: 10 },
       ],
     },
   },
@@ -474,11 +722,11 @@ const game = {
     maxEp: 8, // 最大EP (デフォルトは8)
     // ▲▲▲ 追加ここまで ▲▲▲
     loadout: {
-      weapon: "rotten_pipe",
+      weapon: "腐敗した鉄パイプ",
       armor: "tattered_clothes",
       gadget: "tattered_amulet",
     },
-    mats: { scrap: 1, chip: 1, herb: 1, data: 0 },
+    mats: { scrap: 1, chip: 1, herb: 1, data: 0, re_data: 0 }, // re_data を追加
     unlocked: {
       weapon: ["鉄塊の大剣"],
       armor: ["廃材の鎧"],
@@ -487,7 +735,7 @@ const game = {
     inventory: [], // 探索中の所持品（最大25個）
   },
   storage: {
-    materials: { scrap: 0, chip: 0, herb: 0, data: 0 },
+    materials: { scrap: 0, chip: 0, herb: 0, data: 0, re_data: 0 }, // re_data を追加
     equipment: [], // 保管庫の装備リスト
   },
   MAX_INVENTORY_SIZE: 25,
@@ -744,7 +992,7 @@ const game = {
 
       // 素材 (Scrap, Chip, Herb, Data) を全消去
       // ※所持している素材はすべて消えますが、storage(倉庫)の中身は安全です
-      this.player.mats = { scrap: 0, chip: 0, herb: 0, data: 0 };
+      this.player.mats = { scrap: 0, chip: 0, herb: 0, data: 0, re_data: 0 };
 
       alert(
         `強制帰還。現在の手荷物・素材は全て喪失しました。\n(DAY ${this.day} になりました)`
@@ -815,6 +1063,49 @@ const game = {
     } else {
       this.updateExplorePanel();
     }
+    return true;
+  },
+  upgradeItem(baseKey, upgradeKey, type, cost) {
+    // 1. コスト支払い
+    for (const [mat, amount] of Object.entries(cost)) {
+      if ((this.player.mats[mat] || 0) < amount) {
+        alert("素材が足りません！");
+        return false;
+      }
+    }
+    // 消費
+    for (const [mat, amount] of Object.entries(cost)) {
+      this.player.mats[mat] -= amount;
+    }
+
+    // 2. 元の装備を削除
+    // 装備中の場合
+    if (this.player.loadout[type] === baseKey) {
+      // 何もしない（あとで上書きする）
+    } else {
+      // インベントリから削除
+      const idx = this.player.inventory.indexOf(baseKey);
+      if (idx !== -1) this.player.inventory.splice(idx, 1);
+    }
+
+    // 3. 強化後装備を入手
+    // 拠点(BASE)なら倉庫ではなく、即座に装備 or インベントリに入れる仕様とします
+    // 装備していたならそのまま装備更新
+    if (this.player.loadout[type] === baseKey) {
+      this.player.loadout[type] = upgradeKey;
+      alert(`装備中の【${baseKey}】を【${upgradeKey}】に強化しました！`);
+    } else {
+      // 手荷物へ
+      this.player.inventory.push(upgradeKey);
+      alert(`【${upgradeKey}】を作成し、手荷物に入れました。`);
+    }
+
+    // 図鑑登録
+    if (!this.player.unlocked[type].includes(upgradeKey)) {
+      this.player.unlocked[type].push(upgradeKey);
+    }
+
+    this.updateBaseUI();
     return true;
   },
   buildDeck(overrideWeapon, overrideArmor, overrideGadget) {
@@ -909,6 +1200,7 @@ const game = {
   },
   /* game.js - gameオブジェクト内 */
 
+  /* --- game.js: renderLoadoutList の差し替え --- */
   renderLoadoutList(listElement, onUpdate, targetDeckId = "base-deck-list") {
     listElement.innerHTML = "";
 
@@ -923,25 +1215,35 @@ const game = {
     const renderCat = (db, currentKey, type) => {
       Object.keys(db).forEach((key) => {
         const item = db[key];
+        // 強化後のアイテム(isUpgraded=true)で、かつ所持していない場合はリストに表示しない（作成できないため）
+        // ただし、装備中であれば表示する
         const isEquipped = currentKey === key;
-        // インベントリに所持しているかチェック
         const isInInventory = this.player.inventory.includes(key);
+        const isOwned = isEquipped || isInInventory;
 
-        // 作成コストの計算
-        let canAfford = true;
-        let costDisplay = "";
-        if (item.craft_cost) {
-          costDisplay = Object.entries(item.craft_cost)
-            .map(([k, v]) => `${v} ${k.toUpperCase()}`)
+        // 強化済みアイテムは、持っていないなら一覧に出さない（作成不可なので）
+        if (item.isUpgraded && !isOwned) return;
+
+        // コスト表示生成関数
+        const getCostDisplay = (costObj) => {
+          if (!costObj) return "";
+          return Object.entries(costObj)
+            .map(([k, v]) => {
+              // 強化データは特別な表記にする
+              if (k === "re_data") return `${v} 強化データ`;
+              return `${v} ${k.toUpperCase()}`;
+            })
             .join(", ");
+        };
 
-          for (const [mat, amount] of Object.entries(item.craft_cost)) {
-            if (this.player.mats[mat] < amount) {
-              canAfford = false;
-              break;
-            }
+        // 所持チェック関数
+        const checkCost = (costObj) => {
+          if (!costObj) return true;
+          for (const [mat, amount] of Object.entries(costObj)) {
+            if ((this.player.mats[mat] || 0) < amount) return false;
           }
-        }
+          return true;
+        };
 
         // 行の作成
         const el = document.createElement("div");
@@ -952,15 +1254,19 @@ const game = {
         el.style.cursor = "default";
 
         // アイテム名とコスト表示
+        let costText = "";
+        if (item.isUpgraded) costText = "UPGRADED";
+        else if (item.craft_cost) costText = getCostDisplay(item.craft_cost);
+
         const infoDiv = document.createElement("div");
         infoDiv.style.display = "flex";
         infoDiv.style.justifyContent = "space-between";
         infoDiv.innerHTML = `
-            <span style="font-weight:bold; color:${
-              isEquipped ? "#0f0" : "#ddd"
-            }">${item.name}</span>
-            <span class="item-cost">${costDisplay}</span>
-            `;
+          <span style="font-weight:bold; color:${
+            isEquipped ? "#0f0" : item.isUpgraded ? "#f2cc60" : "#ddd"
+          }">${item.name}</span>
+          <span class="item-cost">${costText}</span>
+          `;
         el.appendChild(infoDiv);
 
         // アクションボタン領域
@@ -970,6 +1276,7 @@ const game = {
         actionsDiv.style.display = "flex";
         actionsDiv.style.gap = "5px";
         actionsDiv.style.justifyContent = "flex-end";
+        actionsDiv.style.flexWrap = "wrap"; // ボタンが多いので折り返し許可
 
         // 1. プレビューボタン
         const btnPreview = document.createElement("button");
@@ -987,7 +1294,7 @@ const game = {
         };
         actionsDiv.appendChild(btnPreview);
 
-        // 2. 状態に応じたボタン (装備中 / 装備 / 作成)
+        // 2. 装備・作成ボタン
         if (isEquipped) {
           const lbl = document.createElement("span");
           lbl.innerText = "装備中";
@@ -997,18 +1304,18 @@ const game = {
           lbl.style.marginLeft = "5px";
           actionsDiv.appendChild(lbl);
         } else if (isInInventory) {
-          // インベントリにある -> 装備ボタン (交換処理)
           const btnEquip = document.createElement("button");
           btnEquip.innerText = "装備";
           btnEquip.className = "btn-equip";
           btnEquip.onclick = (e) => {
             e.stopPropagation();
-            this.equipItem(key, type); // ここで交換ロジックを呼ぶ
+            this.equipItem(key, type);
             if (onUpdate) onUpdate();
           };
           actionsDiv.appendChild(btnEquip);
         } else {
-          // インベントリにない -> 作成ボタン
+          // 未所持 -> 作成ボタン
+          const canAfford = checkCost(item.craft_cost);
           const btnCraft = document.createElement("button");
           btnCraft.innerText = "作成";
           btnCraft.className = "btn-craft";
@@ -1019,14 +1326,71 @@ const game = {
           btnCraft.onclick = (e) => {
             e.stopPropagation();
             if (
-              confirm(`【${item.name}】を作成しますか？\n消費: ${costDisplay}`)
+              confirm(
+                `【${item.name}】を作成しますか？\n消費: ${getCostDisplay(
+                  item.craft_cost
+                )}`
+              )
             ) {
-              // ここで作成ロジックを呼ぶ (buyAndEquip -> craftItem)
               const success = this.craftItem(key, type, item.craft_cost);
               if (success && onUpdate) onUpdate();
             }
           };
           actionsDiv.appendChild(btnCraft);
+        }
+
+        // 3. 強化ボタン & 強化プレビュー (所持していて、強化先がある場合)
+        if (isOwned && item.upgradeTo && db[item.upgradeTo]) {
+          const upItem = db[item.upgradeTo];
+          const upCost = upItem.upgrade_cost;
+          const canUpgrade = checkCost(upCost);
+
+          // 強化プレビュー
+          const btnUpPreview = document.createElement("button");
+          btnUpPreview.innerText = "強化後確認";
+          btnUpPreview.className = "btn-preview";
+          btnUpPreview.style.borderColor = "#f2cc60"; // Gold color hint
+          btnUpPreview.onclick = (e) => {
+            e.stopPropagation();
+            let pW = this.player.loadout.weapon;
+            let pA = this.player.loadout.armor;
+            let pG = this.player.loadout.gadget;
+            // プレビュー用に一時的に強化先IDを指定
+            if (type === "weapon") pW = item.upgradeTo;
+            if (type === "armor") pA = item.upgradeTo;
+            if (type === "gadget") pG = item.upgradeTo;
+            this.renderDeckList(targetDeckId, pW, pA, pG);
+          };
+          actionsDiv.appendChild(btnUpPreview);
+
+          // 強化実行ボタン
+          const btnUpgrade = document.createElement("button");
+          btnUpgrade.innerText = "強化";
+          btnUpgrade.className = "btn-craft"; // Craft style
+          btnUpgrade.style.background = "#5a3a00";
+          btnUpgrade.style.borderColor = "#f2cc60";
+
+          if (!canUpgrade) {
+            btnUpgrade.disabled = true;
+            btnUpgrade.innerText = "強化素材不足";
+          }
+
+          btnUpgrade.onclick = (e) => {
+            e.stopPropagation();
+            if (
+              confirm(
+                `【${item.name}】を【${
+                  upItem.name
+                }】に強化しますか？\n※元の装備は消費されます。\n消費: ${getCostDisplay(
+                  upCost
+                )}`
+              )
+            ) {
+              this.upgradeItem(key, item.upgradeTo, type, upCost);
+              if (onUpdate) onUpdate();
+            }
+          };
+          actionsDiv.appendChild(btnUpgrade);
         }
 
         el.appendChild(actionsDiv);
@@ -1059,7 +1423,9 @@ const game = {
     const matsEl = document.getElementById("explore-mats");
     if (matsEl) {
       const m = this.player.mats;
-      matsEl.innerText = `Scrap:${m.scrap} Chip:${m.chip} Herb:${m.herb} Data:${m.data}`;
+      matsEl.innerText = `Scrap:${m.scrap} Chip:${m.chip} Herb:${m.herb} Data:${
+        m.data
+      } [強化:${m.re_data || 0}]`;
     }
   },
   /* --- game.js (gameオブジェクト内に追加) --- */
@@ -1086,9 +1452,9 @@ const game = {
     document.getElementById("base-baseBreak").innerText = this.player.baseBreak;
     document.getElementById("base-baseDef").innerText = this.player.baseDef;
     const m = this.player.mats;
-    document.getElementById(
-      "base-mats"
-    ).innerText = `Scrap:${m.scrap} Chip:${m.chip} Herb:${m.herb} Data:${m.data}`;
+    document.getElementById("base-mats").innerText = `Scrap:${m.scrap} Chip:${
+      m.chip
+    } Herb:${m.herb} Data:${m.data} [強化:${m.re_data || 0}]`;
     document.getElementById("base-decksize").innerText =
       this.buildDeck().length;
 
@@ -1591,6 +1957,9 @@ const dungeon = {
     for (let i = 0; i < 8 + difficulty; i++) this.spawnEntity("enemy");
     // ルートアイテムの数も少し減らす
     for (let i = 0; i < 12; i++) this.spawnEntity("loot");
+    // ★追加: 強化用データ(re_data)を1つ確実に、運が良ければもう1つ配置
+    this.spawnEntity("re_data");
+    if (Math.random() < 0.3) this.spawnEntity("re_data");
     window.onkeydown = (e) => {
       if (game.state !== "EXPLORE") return;
       const k = e.key.toLowerCase();
@@ -1793,7 +2162,9 @@ const dungeon = {
         entity.lootType = "data"; // 10% (0.9~1.0)
       }
     }
-
+    if (type === "re_data") {
+      entity.lootType = "re_data";
+    }
     // 視界の計算（既存コードの調整）
     if (type === "enemy") {
       const pArmor = EQUIPMENT.ARMORS[game.player.loadout.armor];
@@ -1887,6 +2258,15 @@ const dungeon = {
 
         // ログ出力 (先頭を大文字にして表示)
         game.log(`${matName.toUpperCase()}を取得!`);
+      } else if (hit.type === "re_data") {
+        // ★追加: 強化用データの取得
+        if (game.getInventoryCount() >= game.MAX_INVENTORY_SIZE) {
+          game.log("手荷物が一杯です。(強化データ)");
+          return;
+        }
+        hit.active = false;
+        game.player.mats.re_data = (game.player.mats.re_data || 0) + 1;
+        game.log("【強化用データ】を取得!");
       }
     }
 
@@ -2217,30 +2597,42 @@ const dungeon = {
           ctx.lineTo(drawX + ts / 2, drawY + ts / 2);
           ctx.fill();
         } else {
-          // ▼▼▼ 修正: Lootの色分け処理 ▼▼▼
-          let lootColor = "#fff"; // デフォルト白
-          switch (e.lootType) {
-            case "scrap":
-              lootColor = "#aaa"; // ★修正: 鉄くずを灰色に (#ff01f2ff から変更)
-              break;
-            case "herb":
-              lootColor = "#4f4"; // ハーブ: 緑
-              break;
-            case "chip":
-              lootColor = "#ff0"; // チップ: 黄
-              break;
-            case "data":
-              lootColor = "#0ff"; // データ: 水色
-              break;
-            default:
-              lootColor = "#fff";
-              break;
+          if (e.type === "re_data") {
+            // ★追加: 強化用データは黒色だが、見えないので白枠をつける
+            ctx.fillStyle = "#000";
+            ctx.strokeStyle = "#fff";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(drawX + ts / 2, drawY + ts / 2, 4, 0, 6.28);
+            ctx.fill();
+            ctx.stroke();
+          } else {
+            // 既存の loot 描画処理 (switch文など)
+            // ▼▼▼ 修正: Lootの色分け処理 ▼▼▼
+            let lootColor = "#fff"; // デフォルト白
+            switch (e.lootType) {
+              case "scrap":
+                lootColor = "#aaa"; // ★修正: 鉄くずを灰色に (#ff01f2ff から変更)
+                break;
+              case "herb":
+                lootColor = "#4f4"; // ハーブ: 緑
+                break;
+              case "chip":
+                lootColor = "#ff0"; // チップ: 黄
+                break;
+              case "data":
+                lootColor = "#0ff"; // データ: 水色
+                break;
+              default:
+                lootColor = "#fff";
+                break;
+            }
+            ctx.fillStyle = lootColor;
+            ctx.beginPath();
+            ctx.arc(drawX + ts / 2, drawY + ts / 2, 3, 0, 6.28);
+            ctx.fill();
+            // ▲▲▲ 修正ここまで ▲▲▲
           }
-          ctx.fillStyle = lootColor;
-          ctx.beginPath();
-          ctx.arc(drawX + ts / 2, drawY + ts / 2, 3, 0, 6.28);
-          ctx.fill();
-          // ▲▲▲ 修正ここまで ▲▲▲
         }
       }
     });
