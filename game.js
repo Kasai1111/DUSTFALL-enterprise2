@@ -1676,7 +1676,14 @@ spContainer.innerHTML = `
     if (nav) {
       // DAYが4以上（3日目の探索終了後）なら、ボス戦モードへ
       if (this.day > 3) {
+        /* ▼▼▼ 修正箇所: SHOPボタンを追加し、決戦ボタンと並べる ▼▼▼ */
         nav.innerHTML = `
+                <button 
+                  onclick="game.openShop()" 
+                  style="background: #5a4a00; border-color: #ffd700; color: #fff; margin-bottom: 10px; width: 100%;"
+                >
+                  SHOP (最後の補給)
+                </button>
                 <button 
                   onclick="game.startBossBattle()" 
                   style="background: #c3073f; border-color: #f00; width: 100%; font-size: 18px; font-weight: bold;">
