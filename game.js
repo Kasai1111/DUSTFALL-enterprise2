@@ -1543,7 +1543,7 @@ spContainer.innerHTML = `
     const m = this.player.mats;
     document.getElementById("base-mats").innerText = `Scrap:${m.scrap} Chip:${
       m.chip
-    } Herb:${m.herb} Data:${m.data} [強化:${m.re_data || 0}]`;
+    } Herb:${m.herb} Data:${m.data} 強化用データ:${m.re_data || 0}`;
     
 
     const nav = document.getElementById("base-nav");
