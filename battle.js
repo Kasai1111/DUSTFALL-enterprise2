@@ -1003,7 +1003,8 @@ const battle = (function () {
           game.showResult(false, turn); // ゲームオーバー画面へ
         } else {
           // 勝利時
-          alert("YOU WIN!");
+          alert("YOU WIN! (Found 4 Gold)");
+          game.player.gold = (game.player.gold || 0) + 4; // 4G獲得
           game.player.killCounter = (game.player.killCounter || 0) + 1;
           if (game.player.killCounter >= 5) {
             game.player.killCounter = 0; // リセット

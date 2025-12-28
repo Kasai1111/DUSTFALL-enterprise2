@@ -201,7 +201,14 @@ const ABILITIES = {
     desc: "【実行】Slot2勝利時: 相手が『感染』なら与ダメの50%分SP減少。",
   },
 };
-
+const SHOP_ITEMS = [
+  { key: 'scrap',   name: 'スクラップ', price: 4, type: 'mat' },
+  { key: 'herb',    name: 'ハーブ',     price: 4, type: 'mat' },
+  { key: 'chip',    name: 'チップ',     price: 4, type: 'mat' },
+  { key: 'data',    name: 'データ',     price: 5, type: 'mat' },
+  { key: 're_data', name: '強化データ', price: 8, type: 'mat' },
+  { key: 'potion',  name: '回復剤',     price: 10, type: 'mat', desc: 'HPを50回復' }
+];
 /* --- game.js 内の EQUIPMENT 定義をすべて以下に置き換えてください --- */
 
 const EQUIPMENT = {
@@ -724,12 +731,13 @@ const game = {
     skillPoints: 0,       // 現在の所持スキルポイント
     killCounter: 0,       // 敵撃破数カウント (5になるとリセットされSP獲得)
     encounterCount: 0,
+    gold: 0, // ★新規追加: 所持金
     loadout: {
       weapon: "腐敗した鉄パイプ",
       armor: "tattered_clothes",
       gadget: "tattered_amulet",
     },
-    mats: { scrap: 1, chip: 1, herb: 1, data: 0, re_data: 0 }, // re_data を追加
+    mats: { scrap: 1, chip: 1, herb: 1, data: 0, re_data: 0, potion: 0 },
     unlocked: {
       weapon: ["鉄塊の大剣"],
       armor: ["廃材の鎧"],
@@ -738,8 +746,8 @@ const game = {
     inventory: [], // 探索中の所持品（最大25個）
   },
   storage: {
-    materials: { scrap: 0, chip: 0, herb: 0, data: 0, re_data: 0 }, // re_data を追加
-    equipment: [], // 保管庫の装備リスト
+    materials: { scrap: 0, chip: 0, herb: 0, data: 0, re_data: 0, potion: 0 },
+    equipment: [],
   },
   MAX_INVENTORY_SIZE: 25,
 
@@ -1465,7 +1473,94 @@ const game = {
     }
   },
   /* --- game.js (gameオブジェクト内に追加) --- */
+openShop() {
+    const modal = document.getElementById('shop-modal');
+    const list = document.getElementById('shop-list');
+    const goldEl = document.getElementById('shop-gold');
+    
+    if(!modal || !list) return;
 
+    // 所持金表示更新
+    goldEl.innerText = this.player.gold;
+
+    // 商品リスト描画
+    list.innerHTML = '';
+    SHOP_ITEMS.forEach(item => {
+      const el = document.createElement('div');
+      el.className = 'shop-item';
+      
+      const canBuy = this.player.gold >= item.price;
+      
+      el.innerHTML = `
+        <div class="shop-info">
+          <div class="shop-name">${item.name} ${item.desc ? `<span style="font-size:10px; color:#888">(${item.desc})</span>` : ''}</div>
+          <div class="shop-price">${item.price} G</div>
+        </div>
+        <button class="shop-buy-btn" ${canBuy ? '' : 'disabled'} onclick="game.buyItem('${item.key}', ${item.price})">
+          BUY
+        </button>
+      `;
+      list.appendChild(el);
+    });
+
+    modal.style.display = 'block';
+  },
+
+  closeShop() {
+    document.getElementById('shop-modal').style.display = 'none';
+  },
+  // 4. アイテム購入処理 (gameオブジェクト内に追加)
+  buyItem(key, price) {
+    if (this.player.gold < price) {
+      alert("お金が足りません！");
+      return;
+    }
+
+    if (confirm(`${price}G で購入しますか？ (倉庫へ送られます)`)) {
+      this.player.gold -= price;
+      
+      // 購入品は「倉庫」に追加
+      this.storage.materials[key] = (this.storage.materials[key] || 0) + 1;
+      this.saveStorage();
+      
+      // UI更新 (ショップ内の表示と、拠点の表示)
+      this.openShop(); // 所持金表示などをリフレッシュ
+      this.updateBaseUI(); // 背景の拠点UIも更新
+      
+      // ログ等のフィードバックがあれば尚良し
+    }
+  },
+
+  // 5. ポーション使用処理 (gameオブジェクト内に追加)
+  usePotion() {
+    // インベントリ(手荷物)にポーションがあるか確認
+    if ((this.player.mats.potion || 0) <= 0) {
+      alert("手荷物に回復剤がありません。");
+      return;
+    }
+    // HPが満タンか確認
+    if (this.player.hp >= this.player.maxHp) {
+      alert("HPは既に満タンです。");
+      return;
+    }
+
+    // 消費と回復
+    this.player.mats.potion--;
+    const healAmount = 50;
+    const oldHp = this.player.hp;
+    this.player.hp = Math.min(this.player.maxHp, this.player.hp + healAmount);
+    
+    const healed = this.player.hp - oldHp;
+    alert(`回復剤を使用しました。HPが ${healed} 回復！ (${oldHp} -> ${this.player.hp})`);
+
+    // UI更新 (現在地によって更新対象を変える)
+    if (this.state === 'BASE') {
+      this.updateBaseUI();
+    } else if (this.state === 'EXPLORE') {
+      this.updateUI(); // 探索画面のHP表示更新
+      this.updateExplorePanel(); // 装備パネル(インベントリ)更新
+    }
+  },
   // 探索画面の装備パネル開閉
   toggleExplorePanel() {
     const panel = document.getElementById("explore-panel");
@@ -1482,11 +1577,22 @@ const game = {
   },
   updateBaseUI() {
     document.getElementById("base-hp").innerText = this.player.hp;
-document.getElementById("base-maxhp").innerText = this.player.maxHp;
-document.getElementById("base-baseAtk").innerText = this.player.baseAtk;
+　　　document.getElementById("base-maxhp").innerText = this.player.maxHp;
+　　　document.getElementById("base-baseAtk").innerText = this.player.baseAtk;
 document.getElementById("base-baseBreak").innerText = this.player.baseBreak;
 document.getElementById("base-baseDef").innerText = this.player.baseDef;
+let goldDisplay = document.getElementById('base-gold-display');
+    if (!goldDisplay) {
+        // ステータスエリアに追加
+        const statusPanel = document.getElementById('base-mats').parentElement;
+        goldDisplay = document.createElement('div');
+        goldDisplay.id = 'base-gold-display';
 
+        goldDisplay.style.marginBottom = '8px';
+        // 素材表示の上に挿入
+        statusPanel.insertBefore(goldDisplay, document.getElementById('base-mats'));
+    }
+    goldDisplay.innerText = `所持金: ${this.player.gold} G`;
 // 2. スキルポイント割り振りUIの挿入場所を作成または取得
 let spContainer = document.getElementById("sp-allocation-ui");
 if (!spContainer) {
@@ -1560,6 +1666,12 @@ spContainer.innerHTML = `
       } else {
         // 通常時はいつものボタンを表示
         nav.innerHTML = `
+                <button 
+                  onclick="game.openShop()" 
+                  style="background: #5a4a00; border-color: #ffd700; color: #fff"
+                >
+                  SHOP
+                </button>
                 <button onclick="game.startExplore()">探索に出る</button>
                 <button onclick="game.rest()">休憩 (次の日に進む)</button>
               `;
@@ -1596,7 +1708,7 @@ spContainer.innerHTML = `
     container.innerHTML = "";
 
     // ★修正: "re_data" をリストに追加しました
-    const matTypes = ["scrap", "chip", "herb", "data", "re_data"];
+    const matTypes = ["scrap", "chip", "herb", "data", "re_data", "potion"];
     
     matTypes.forEach((mat) => {
       const amount = this.player.mats[mat] || 0;
@@ -1605,10 +1717,24 @@ spContainer.innerHTML = `
         el.className = "item-row";
         el.style.fontSize = "12px";
         
-        // 表示名を少し見やすく調整 (re_dataの場合の表示)
-        const displayName = mat === "re_data" ? "RE_DATA" : mat.toUpperCase();
+        // 表示名の調整
+        let displayName = mat.toUpperCase();
+        if (mat === "re_data") displayName = "RE_DATA";
+        if (mat === "potion")  displayName = "回復剤"; // 日本語表示
 
-        el.innerHTML = `<span>${displayName}: ${amount}</span><button onclick="game.moveToStorage('${mat}', ${amount})" style="padding: 2px 6px; font-size: 10px;">→ Storage</button>`;
+        let extraBtn = "";
+        // ★追加: ポーションの場合のみ「使用」ボタンを表示
+        if (mat === "potion") {
+           extraBtn = `<button onclick="game.usePotion()" class="btn-use-potion">USE</button>`;
+        }
+
+        el.innerHTML = `
+          <span>${displayName}: ${amount}</span>
+          <div style="display:flex; gap:5px; align-items:center;">
+            ${extraBtn}
+            <button onclick="game.moveToStorage('${mat}', ${amount})" style="padding: 2px 6px; font-size: 10px;">→ Storage</button>
+          </div>
+        `;
         container.appendChild(el);
       }
     });
@@ -1638,8 +1764,8 @@ spContainer.innerHTML = `
     if (!container) return;
     container.innerHTML = "";
 
-    // ★修正: "re_data" をリストに追加しました
-    const matTypes = ["scrap", "chip", "herb", "data", "re_data"];
+    // ★修正: potion をリストに追加
+    const matTypes = ["scrap", "chip", "herb", "data", "re_data", "potion"];
     
     matTypes.forEach((mat) => {
       const amount = this.storage.materials[mat] || 0;
@@ -1647,29 +1773,27 @@ spContainer.innerHTML = `
         const el = document.createElement("div");
         el.className = "item-row";
         el.style.fontSize = "12px";
-        const displayName = mat === "re_data" ? "RE_DATA" : mat.toUpperCase();
+        let displayName = mat.toUpperCase();
+        if (mat === "re_data") displayName = "RE_DATA";
+        if (mat === "potion")  displayName = "回復剤";
 
         el.innerHTML = `<span>${displayName}: ${amount}</span><div><button onclick="game.moveFromStorage('${mat}', 1)" style="padding: 2px 6px; font-size: 10px; margin-right: 2px;">← 1</button><button onclick="game.takeFromStorage('${mat}')" style="padding: 2px 6px; font-size: 10px;">← All</button></div>`;
         container.appendChild(el);
       }
     });
 
-    // 保管庫の装備を表示
+    // (装備品表示部分は既存のまま)
     if (this.storage.equipment && this.storage.equipment.length > 0) {
       this.storage.equipment.forEach((item, idx) => {
         const el = document.createElement("div");
         el.className = "item-row";
         el.style.fontSize = "12px";
-        el.innerHTML = `<span>${
-          item.name || item
-        }</span><button onclick="game.moveFromStorage('equip', ${idx})" style="padding: 2px 6px; font-size: 10px;">← Take</button>`;
+        el.innerHTML = `<span>${item.name || item}</span><button onclick="game.moveFromStorage('equip', ${idx})" style="padding: 2px 6px; font-size: 10px;">← Take</button>`;
         container.appendChild(el);
       });
     }
-
     if (container.children.length === 0) {
-      container.innerHTML =
-        '<div style="color: #666; font-size: 11px; padding: 5px;">Empty</div>';
+      container.innerHTML = '<div style="color: #666; font-size: 11px; padding: 5px;">Empty</div>';
     }
   },
   // 素材を保管庫に移動

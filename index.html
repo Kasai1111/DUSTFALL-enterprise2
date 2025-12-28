@@ -231,7 +231,52 @@
           "
         >
           <h2>拠点 (DAY <span id="base-day">1</span>)</h2>
+
+          <div id="shop-modal" class="modal">
+            <div class="modal-content" style="max-width: 400px">
+              <span class="close-btn" onclick="game.closeShop()">&times;</span>
+              <h2
+                style="
+                  text-align: center;
+                  color: #ffd700;
+                  border-bottom: 1px solid #ffd700;
+                  padding-bottom: 10px;
+                "
+              >
+                SUPPLY SHOP
+              </h2>
+              <div
+                style="
+                  text-align: right;
+                  margin-bottom: 10px;
+                  color: #ffd700;
+                  font-weight: bold;
+                "
+              >
+                所持金: <span id="shop-gold">0</span> G
+              </div>
+
+              <div id="shop-list" class="shop-list"></div>
+
+              <div style="text-align: center; margin-top: 20px">
+                <button
+                  class="equip-btn active"
+                  onclick="game.closeShop()"
+                  style="width: 100%"
+                >
+                  CLOSE
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div id="base-nav">
+            <button
+              onclick="game.openShop()"
+              style="background: #5a4a00; border-color: #ffd700; color: #fff"
+            >
+              SHOP
+            </button>
             <button onclick="game.startExplore()">探索に出る</button>
             <button onclick="game.rest()">休憩 (次の日に進む)</button>
           </div>
@@ -252,7 +297,7 @@
                 <span id="base-baseBreak"></span> 防御力:
                 <span id="base-baseDef"></span>
               </p>
-              <p>素材: <span id="base-mats"></span></p>
+              <p>アイテム: <span id="base-mats"></span></p>
               <p style="margin-top: 10px; color: #ffd700">
                 手荷物: <span id="inventory-count">0</span>/25
               </p>
