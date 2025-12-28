@@ -731,7 +731,7 @@ const game = {
     skillPoints: 0,       // 現在の所持スキルポイント
     killCounter: 0,       // 敵撃破数カウント (5になるとリセットされSP獲得)
     encounterCount: 0,
-    gold: 0, // ★新規追加: 所持金
+    gold: 20, // ★新規追加: 所持金
     loadout: {
       weapon: "腐敗した鉄パイプ",
       armor: "tattered_clothes",
