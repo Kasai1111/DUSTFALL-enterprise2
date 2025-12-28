@@ -731,7 +731,7 @@ const game = {
     skillPoints: 0,       // 現在の所持スキルポイント
     killCounter: 0,       // 敵撃破数カウント (5になるとリセットされSP獲得)
     encounterCount: 0,
-    gold: 20, // ★新規追加: 所持金
+    gold: 6, // ★新規追加: 所持金
     loadout: {
       weapon: "腐敗した鉄パイプ",
       armor: "tattered_clothes",
@@ -816,7 +816,7 @@ const game = {
 
     // ▼▼▼ 修正: スキップ確認ダイアログを追加 ▼▼▼
     const skipPrologue = confirm(
-      "プロローグ（THE BOSS戦）をスキップしますか？\n\n[OK] スキップ (敗北扱いとして拠点から開始)\n[キャンセル] 戦闘開始"
+      "プロローグ（初回のTHE BOSS戦）をスキップしますか？\n\n[OK] スキップ (敗北扱いとして拠点から開始)\n[キャンセル] 戦闘開始"
     );
 
     if (skipPrologue) {
@@ -1595,6 +1595,7 @@ openShop() {
     }
   },
   updateBaseUI() {
+    document.getElementById("base-day").innerText = this.day;
     document.getElementById("base-hp").innerText = this.player.hp;
 　　　document.getElementById("base-maxhp").innerText = this.player.maxHp;
 　　　document.getElementById("base-baseAtk").innerText = this.player.baseAtk;
