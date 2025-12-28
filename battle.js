@@ -500,7 +500,7 @@ const battle = (function () {
     // --- 2. カウンター判断 (相手がSPを撃てそうで、かつ自分がピンチor性格的に好む場合) ---
     const playerCanUseSP =
       opponent.hand.some((c) => c.isSP) && opponent.sp >= MAX_SP;
-    if (!ai.hasUsedCounter && ai.ep >= 4) {
+    if (!ai.forcedSlot1 && !ai.hasUsedCounter && ai.ep >= 4) {
       let counterProbability = weights.counterBias;
 
       if (playerCanUseSP) {
@@ -519,7 +519,6 @@ const battle = (function () {
         }
       }
     }
-
     // --- 3. 通常思考 (シミュレーション) ---
     // 手札の準備
     let hand = ai.hand.map((c, i) => ({ ...c, originalIndex: i }));
