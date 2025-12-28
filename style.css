@@ -1663,3 +1663,179 @@ button {
   margin-right: 4px;
   font-weight: bold;
 }
+/* --- Skill Point System --- */
+
+/* 獲得カットイン */
+#sp-cutin {
+  position: fixed;
+  top: 20%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.9);
+  border: 2px solid #ffd700;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+  padding: 20px 40px;
+  z-index: 4000;
+  text-align: center;
+  border-radius: 8px;
+  animation: spPop 3s ease-in-out forwards;
+  pointer-events: none;
+}
+.sp-title {
+  color: #ffd700;
+  font-size: 24px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  margin-bottom: 5px;
+  text-shadow: 0 0 10px #b8860b;
+}
+.sp-reason {
+  color: #fff;
+  font-size: 14px;
+}
+@keyframes spPop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -40%) scale(0.8);
+  }
+  10% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+  20% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  80% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -60%);
+  }
+}
+
+/* 割り振りUI */
+.sp-alloc-container {
+  margin-top: 10px;
+  padding: 10px;
+  background: rgba(255, 215, 0, 0.05);
+  border: 1px solid #5a4a00;
+  border-radius: 4px;
+}
+.sp-header {
+  color: #ffd700;
+  font-weight: bold;
+  border-bottom: 1px solid #5a4a00;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  display: flex;
+  justify-content: space-between;
+}
+.sp-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+.btn-sp-add {
+  background: #333;
+  color: #ffd700;
+  border: 1px solid #ffd700;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  line-height: 18px;
+  text-align: center;
+  padding: 0;
+  font-size: 14px;
+  cursor: pointer;
+  margin-left: 10px;
+}
+.btn-sp-add:hover {
+  background: #ffd700;
+  color: #000;
+}
+.btn-sp-add:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  border-color: #666;
+  color: #666;
+}
+/* --- style.css 末尾に追加 --- */
+
+/* MISSIONボタン (RULESボタンの左隣に配置) */
+.mission-open-btn {
+  position: fixed;
+  top: 10px;
+  right: 90px; /* RULESボタン(right:10px)の左側に配置 */
+  z-index: 4000;
+  background: rgba(255, 215, 0, 0.1); /* 少し金色っぽく */
+  border: 1px solid #eee9cd;
+  color: #ebe9de;
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+  transition: 0.2s;
+}
+.mission-open-btn:hover {
+  background: #ffffff;
+  color: #000;
+}
+
+/* ミッションリストのスタイル */
+.mission-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 15px;
+}
+.mission-item {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid #444;
+  border-left: 4px solid #888;
+  padding: 10px;
+  border-radius: 4px;
+}
+/* ミッションごとの色分け */
+.mission-item:nth-child(1) {
+  border-left-color: #ff5555;
+} /* 赤: 戦闘 */
+.mission-item:nth-child(2) {
+  border-left-color: #55aaff;
+} /* 青: 防御 */
+.mission-item:nth-child(3) {
+  border-left-color: #55ff55;
+} /* 緑: 探索 */
+
+.mission-title {
+  font-weight: bold;
+  color: #e0e0e0;
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+.mission-desc {
+  font-size: 0.85rem;
+  color: #aaa;
+  margin-bottom: 5px;
+}
+.mission-progress {
+  font-size: 0.9rem;
+  color: #ffd700;
+  text-align: right;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2px 8px;
+  border-radius: 10px;
+  display: inline-block;
+  float: right;
+}
+.mission-reward {
+  font-size: 0.8rem;
+  color: #ffd700;
+  text-align: right;
+  font-weight: bold;
+}

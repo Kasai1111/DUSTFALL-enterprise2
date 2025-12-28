@@ -243,8 +243,8 @@ const battle = (function () {
     };
 
     if (name === "Enemy") {
-      entity.hp = 50;
-      entity.maxHp = 50;
+      entity.hp = 40;
+      entity.maxHp = 40;
       const AI_STRATEGY_NAMES = Object.keys(AI_STRATEGIES);
       const randomStrategyName =
         AI_STRATEGY_NAMES[Math.floor(Math.random() * AI_STRATEGY_NAMES.length)];
@@ -272,6 +272,7 @@ const battle = (function () {
 
   function initBattle() {
     player = createEntity("Player", selectedWeapon, selectedArmor, selectedAcc);
+    player.tookDamage = false; // ★追加: ノーダメージ判定用フラグ
 
     // ★修正: 敵の装備抽選リストから isUpgraded 属性を持つものを除外する
     const wKeys = Object.keys(EQUIPMENT.WEAPONS).filter(
@@ -1000,6 +1001,16 @@ const battle = (function () {
         } else {
           // 勝利時
           alert("YOU WIN!");
+          game.player.killCounter = (game.player.killCounter || 0) + 1;
+          if (game.player.killCounter >= 5) {
+            game.player.killCounter = 0; // リセット
+            game.gainSkillPoint("殲滅者 (5 Kills)");
+          }
+
+          // ★追加: ノーダメージボーナス判定
+          if (player.tookDamage === false) {
+            game.gainSkillPoint("完全勝利 (No Damage)");
+          }
 
           // ★HPの引継ぎ: 戦闘後のHPをゲーム本体に反映
           game.player.hp = Math.max(1, player.hp);
@@ -1875,6 +1886,9 @@ const battle = (function () {
 
     target.hp -= dmg;
     target.pos -= pos;
+    if (target.name === "Player" && dmg > 0) {
+      target.tookDamage = true;
+    }
 
     let logMsg = `${target.name} takes `;
     if (dmg > 0) logMsg += `${dmg} HP Dmg`;

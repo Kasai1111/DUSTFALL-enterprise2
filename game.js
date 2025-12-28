@@ -721,6 +721,9 @@ const game = {
     baseBreak: 2, // 基礎崩し力 (Breakカードに加算)
     maxEp: 8, // 最大EP (デフォルトは8)
     // ▲▲▲ 追加ここまで ▲▲▲
+    skillPoints: 0,       // 現在の所持スキルポイント
+    killCounter: 0,       // 敵撃破数カウント (5になるとリセットされSP獲得)
+    encounterCount: 0,
     loadout: {
       weapon: "腐敗した鉄パイプ",
       armor: "tattered_clothes",
@@ -886,6 +889,7 @@ const game = {
     this.log("⚠️ SUDDEN ENCOUNTER! THE BOSS APPEARED! ⚠️");
   },
   startExplore() {
+    this.player.encounterCount = 0; // ★追加: エンカウント数リセット
     try {
       dungeon.init(this.day);
       this.showScreen("explore-screen");
@@ -1000,6 +1004,12 @@ const game = {
       // --- 変更ここまで ---
     } else {
       alert(`安全に帰還しました。\n(DAY ${this.day} になりました)`);
+      // ★追加: 不戦帰還ボーナス判定
+      if (this.player.encounterCount === 0) {
+        setTimeout(() => {
+        this.gainSkillPoint("不戦の誓い (No Encounters)");
+       }, 500); // アラート後に少し遅らせて表示
+      }
     }
 
     this.player.playerBlock = 0;
@@ -1197,6 +1207,46 @@ const game = {
 
       container.appendChild(el);
     });
+  },
+  gainSkillPoint(reason) {
+    this.player.skillPoints++;
+    this.log(`★ Skill Point Acquired! (${reason})`);
+    // カットイン表示
+    const cutin = document.getElementById("sp-cutin");
+    const reasonText = document.getElementById("sp-reason-text");
+     if (cutin && reasonText) {
+    reasonText.innerText = reason;
+    // アニメーションをリセットして再生
+    cutin.style.display = "none";
+    void cutin.offsetWidth; // リフロー強制
+    cutin.style.display = "block";
+    }
+  },
+  allocateSkillPoint(statType) {
+    if (this.player.skillPoints <= 0) return;
+
+    // コスト支払い
+    this.player.skillPoints--;
+
+    // ステータス加算
+   switch (statType) {
+    case 'hp':
+      this.player.maxHp += 10;
+      this.player.hp += 10; // 現在HPも回復させる
+      break;
+    case 'atk':
+      this.player.baseAtk += 2;
+      break;
+    case 'break':
+      this.player.baseBreak += 2;
+      break;
+    case 'def':
+      this.player.baseDef += 2;
+      break;
+   }
+
+   // UI更新
+   this.updateBaseUI();
   },
   /* game.js - gameオブジェクト内 */
 
@@ -1431,18 +1481,70 @@ const game = {
     }
   },
   updateBaseUI() {
-    document.getElementById("base-day").innerText = this.day;
     document.getElementById("base-hp").innerText = this.player.hp;
-    document.getElementById("base-maxhp").innerText = this.player.maxHp;
-    document.getElementById("base-baseAtk").innerText = this.player.baseAtk;
-    document.getElementById("base-baseBreak").innerText = this.player.baseBreak;
-    document.getElementById("base-baseDef").innerText = this.player.baseDef;
+document.getElementById("base-maxhp").innerText = this.player.maxHp;
+document.getElementById("base-baseAtk").innerText = this.player.baseAtk;
+document.getElementById("base-baseBreak").innerText = this.player.baseBreak;
+document.getElementById("base-baseDef").innerText = this.player.baseDef;
+
+// 2. スキルポイント割り振りUIの挿入場所を作成または取得
+let spContainer = document.getElementById("sp-allocation-ui");
+if (!spContainer) {
+  // まだなければ、ステータス表示エリアの下あたりに挿入
+  // "base-baseDef" の親要素(pタグ)の親(div)を探して追加する
+  const statusDiv = document.getElementById("base-hp").parentElement.parentElement;
+  spContainer = document.createElement("div");
+  spContainer.id = "sp-allocation-ui";
+  spContainer.className = "sp-alloc-container";
+  // 手荷物表示の前あたりに挿入
+  const invHeader = document.getElementById("inventory-count").parentElement;
+  statusDiv.insertBefore(spContainer, invHeader);
+}
+
+// 3. UIの描画
+const sp = this.player.skillPoints;
+const hasPt = sp > 0;
+const disabledAttr = hasPt ? "" : "disabled";
+
+spContainer.innerHTML = `
+  <div class="sp-header">
+    <span>SKILL POINTS</span>
+    <span style="color:${hasPt ? '#fff' : '#888'}">${sp} Pt</span>
+  </div>
+  <div class="sp-row">
+    <span>最大HP (+10)</span>
+    <div>
+      <span style="color:#fff">${this.player.maxHp}</span>
+      <button class="btn-sp-add" ${disabledAttr} onclick="game.allocateSkillPoint('hp')">+</button>
+    </div>
+  </div>
+  <div class="sp-row">
+    <span>攻撃力 (+2)</span>
+    <div>
+      <span style="color:#fff">${this.player.baseAtk}</span>
+      <button class="btn-sp-add" ${disabledAttr} onclick="game.allocateSkillPoint('atk')">+</button>
+    </div>
+  </div>
+  <div class="sp-row">
+    <span>ブレイク力 (+2)</span>
+    <div>
+      <span style="color:#fff">${this.player.baseBreak}</span>
+      <button class="btn-sp-add" ${disabledAttr} onclick="game.allocateSkillPoint('break')">+</button>
+    </div>
+  </div>
+  <div class="sp-row">
+    <span>防御力 (+2)</span>
+    <div>
+      <span style="color:#fff">${this.player.baseDef}</span>
+      <button class="btn-sp-add" ${disabledAttr} onclick="game.allocateSkillPoint('def')">+</button>
+    </div>
+  </div>
+`;
     const m = this.player.mats;
     document.getElementById("base-mats").innerText = `Scrap:${m.scrap} Chip:${
       m.chip
     } Herb:${m.herb} Data:${m.data} [強化:${m.re_data || 0}]`;
-    document.getElementById("base-decksize").innerText =
-      this.buildDeck().length;
+    
 
     const nav = document.getElementById("base-nav");
     if (nav) {
@@ -1696,6 +1798,7 @@ const game = {
     this.updateBaseUI();
   },
   enterBattle(enemy, isAmbush) {
+    this.player.encounterCount++; // ★追加: エンカウント数加算
     this.currentEnemy = enemy; // ★戦う敵を記録しておく
     this.state = "BATTLE"; // 状態を戦闘中に変更
     dungeon.stop(); // ★ダンジョンの動き（描画ループ）を止める
@@ -2650,5 +2753,35 @@ const dungeon = {
     else stInd.className = "";
   },
 };
+/* --- game.js 末尾に追加 --- */
 
+// MISSIONモーダルを開く
+function openMissions() {
+  // 現在の撃破カウンターを取得して表示更新
+  // game.player.killCounter が未定義の場合は 0 とする
+  const kills = game.player.killCounter || 0;
+  const countEl = document.getElementById("mission-kill-count");
+  
+  if (countEl) {
+    countEl.innerText = kills;
+  }
+
+  // モーダルを表示
+  document.getElementById("mission-modal").style.display = "block";
+}
+
+// MISSIONモーダルを閉じる
+function closeMissions() {
+  document.getElementById("mission-modal").style.display = "none";
+}
+
+// 既存のウィンドウクリック処理に追加（モーダル外クリックで閉じる）
+// ※既存の window.onclick がある場合は上書きに注意が必要ですが、
+//   battle.js 側で設定されているものを補完する形で動きます。
+window.addEventListener("click", function(event) {
+  const modal = document.getElementById("mission-modal");
+  if (event.target == modal) {
+    modal.style.display = "none";
+  }
+});
 window.onload = () => game.init();

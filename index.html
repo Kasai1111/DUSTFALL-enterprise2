@@ -20,6 +20,7 @@
       </div>
 
       <button class="rule-open-btn" onclick="openRules()">RULES</button>
+      <button class="mission-open-btn" onclick="openMissions()">MISSION</button>
       <div id="rule-modal" class="modal">
         <div class="modal-content">
           <span class="close-btn" onclick="closeRules()">&times;</span>
@@ -165,7 +166,62 @@
           </div>
         </div>
       </div>
+      <div id="mission-modal" class="modal">
+        <div class="modal-content">
+          <span class="close-btn" onclick="closeMissions()">&times;</span>
+          <h2
+            style="
+              text-align: center;
+              border-bottom: 1px solid #ffd700;
+              color: #ffd700;
+              padding-bottom: 10px;
+            "
+          >
+            MISSION BOARD
+          </h2>
+          <p style="text-align: center; font-size: 12px; color: #888">
+            条件を達成するとスキルポイント(SP)を1つ獲得できます。
+          </p>
 
+          <div class="mission-list">
+            <div class="mission-item">
+              <div class="mission-title">殲滅者</div>
+              <div class="mission-desc">敵を5体倒すたびに獲得</div>
+              <div class="mission-progress">
+                現在の撃破カウント:
+                <span
+                  id="mission-kill-count"
+                  style="color: #fff; font-weight: bold"
+                  >0</span
+                >
+                / 5
+              </div>
+            </div>
+
+            <div class="mission-item">
+              <div class="mission-title">完全勝利</div>
+              <div class="mission-desc">敵との戦闘をノーダメージで勝利する</div>
+            </div>
+
+            <div class="mission-item">
+              <div class="mission-title">スニークキング</div>
+              <div class="mission-desc">
+                一度も敵とエンカウントせずに探索から帰還する
+              </div>
+            </div>
+          </div>
+
+          <div style="text-align: center; margin-top: 20px">
+            <button
+              class="equip-btn active"
+              onclick="closeMissions()"
+              style="width: 100%"
+            >
+              CLOSE
+            </button>
+          </div>
+        </div>
+      </div>
       <div id="base-screen" class="screen">
         <div
           style="
@@ -197,7 +253,6 @@
                 <span id="base-baseDef"></span>
               </p>
               <p>素材: <span id="base-mats"></span></p>
-              <p>デッキサイズ: <span id="base-decksize"></span> 枚</p>
               <p style="margin-top: 10px; color: #ffd700">
                 手荷物: <span id="inventory-count">0</span>/25
               </p>
@@ -228,6 +283,11 @@
           </div>
           <div class="panel">
             <h3>倉庫</h3>
+            <p style="font-size: 13px">
+              作成した装備は倉庫に入ります。<b
+                >倉庫から手荷物に移動することで装備と強化ができます。</b
+              >
+            </p>
             <div
               id="storage-list"
               style="max-height: 400px; overflow-y: auto"
@@ -300,6 +360,10 @@
         <div class="cutin-user" id="ac-user">PLAYER</div>
         <div class="cutin-name" id="ac-name">ABILITY NAME</div>
         <div class="cutin-desc" id="ac-desc">Description text...</div>
+      </div>
+      <div id="sp-cutin" class="cutin-style" style="display: none">
+        <div class="sp-title">SKILL POINT ACQUIRED!</div>
+        <div class="sp-reason" id="sp-reason-text">Reason</div>
       </div>
 
       <div id="battle-screen" class="screen">
