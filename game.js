@@ -2928,3 +2928,24 @@ window.addEventListener("click", function(event) {
   }
 });
 window.onload = () => game.init();
+/* game.js */
+
+/* ▼▼▼ 追加: 遊び方モーダルの制御 ▼▼▼ */
+
+// 遊び方モーダルを開く
+function openHowTo() {
+  document.getElementById("howto-modal").style.display = "block";
+}
+
+// 遊び方モーダルを閉じる
+function closeHowTo() {
+  document.getElementById("howto-modal").style.display = "none";
+}
+
+// モーダル外クリックで閉じる処理の追加
+window.addEventListener("click", function (event) {
+  const modal = document.getElementById("howto-modal");
+  if (event.target == modal) {
+    modal.style.display = "none";
+  }
+});

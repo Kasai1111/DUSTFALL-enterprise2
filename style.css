@@ -1929,3 +1929,27 @@ button {
   border-bottom: 1px solid #444;
   padding-bottom: 5px;
 }
+/* style.css */
+
+/* ▼▼▼ 追加: 遊び方ボタンのスタイル ▼▼▼ */
+.howto-open-btn {
+  position: fixed;
+  top: 10px;
+  right: 170px; /* MISSION(90px) の左隣に配置 */
+  z-index: 4000;
+  background: rgba(79, 255, 79, 0.1); /* 緑がかった色味 */
+  border: 1px solid #4f4;
+  color: #cfc;
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+  transition: 0.2s;
+}
+
+.howto-open-btn:hover {
+  background: #4f4;
+  color: #000;
+}

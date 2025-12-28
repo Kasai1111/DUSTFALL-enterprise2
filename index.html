@@ -21,6 +21,166 @@
 
       <button class="rule-open-btn" onclick="openRules()">RULES</button>
       <button class="mission-open-btn" onclick="openMissions()">MISSION</button>
+      <button class="howto-open-btn" onclick="openHowTo()">遊び方</button>
+
+      <div id="howto-modal" class="modal">
+        <div class="modal-content">
+          <span class="close-btn" onclick="closeHowTo()">&times;</span>
+          <h2
+            style="
+              text-align: center;
+              margin-top: 0;
+              border-bottom: 1px solid #4f4;
+              color: #4f4;
+              padding-bottom: 10px;
+            "
+          >
+            HOW TO PLAY
+          </h2>
+
+          <div class="rule-section">
+            <h2 class="rule-h2" style="border-left-color: #4f4; color: #4f4">
+              最終目標
+            </h2>
+            <p style="font-size: 0.9rem; line-height: 1.6">
+              あなたの目的はただ一つ。最強の敵
+              <strong>"THE BOSS"</strong> を撃破することです。<br />
+              プロローグでの敗北後、あなたに残された時間は
+              <strong>3日間</strong>。<br />
+              探索で資材を集め、装備を強化し、決戦の日（DAY
+              4）に備えてください。
+            </p>
+          </div>
+
+          <div class="rule-section">
+            <h2 class="rule-h2" style="border-left-color: #4f4; color: #4f4">
+              探索 (EXPLORATION)
+            </h2>
+            <p>限られた時間の中で物資を回収し、生還しなければなりません。</p>
+            <h3 class="rule-h3">基本操作</h3>
+            <ul class="rule-list">
+              <li><strong>移動:</strong> W A S D または 矢印キー</li>
+              <li>
+                <strong>装備パネル:</strong> E キー（探索中に手荷物整理が可能）
+              </li>
+              <li>
+                <strong>ステルス:</strong> Shift
+                キー（スタミナを消費して足音を消す）
+              </li>
+            </ul>
+            <h3 class="rule-h3">ルールとリスク</h3>
+            <ul class="rule-list">
+              <li>
+                <strong>制限時間:</strong> 探索は 180秒
+                です。時間が尽きると強制帰還となります。
+              </li>
+              <li>
+                <strong>勝利条件:</strong>
+                緑色のタイル（出口）に到達すれば、物資を持って生還できます。
+              </li>
+              <li>
+                <strong>強制帰還のペナルティ:</strong><br />
+                時間切れなどで強制帰還すると、<span style="color: #ff7b72"
+                  >手荷物（素材・装備）を全て失った状態</span
+                >で翌日を迎えます。 ※装備中の装備は失われません。<br />
+                「引き際」を見極めることが鍵です。
+              </li>
+            </ul>
+            <h3 class="rule-h3">敵</h3>
+            <ul class="rule-list">
+              <li>
+                <strong>視界:</strong>
+                敵（赤い正方形）には視界があります。見つかると追跡モードになり、接触すると戦闘になります。
+              </li>
+              <li>
+                <strong>時間経過:</strong>
+                敵との戦闘中は時間の経過が止まります。
+              </li>
+            </ul>
+          </div>
+
+          <div class="rule-section">
+            <h2 class="rule-h2" style="border-left-color: #4f4; color: #4f4">
+              拠点と準備 (BASE CAMP)
+            </h2>
+            <p>探索で得た戦利品を使って、キャラクターを強化します。</p>
+            <ul class="rule-list">
+              <li>
+                <strong>手荷物 (Inventory):</strong> 最大 25個
+                までしか持てません。<br />
+                探索に持っていく回復薬や、持ち帰る素材の枠を管理してください。
+              </li>
+              <li>
+                <strong>倉庫 (Storage):</strong> 容量は無限です。<br />
+                探索から戻ったら、素材を倉庫に移して手荷物を空けましょう。
+              </li>
+              <li>
+                <span style="color: #ffd700">重要:</span>
+                装備の作成や強化を行うには、素材を「手荷物」に入れておく必要があります。
+              </li>
+            </ul>
+          </div>
+
+          <div class="rule-section">
+            <h2 class="rule-h2" style="border-left-color: #4f4; color: #4f4">
+              クラフトと強化
+            </h2>
+            <ul class="rule-list">
+              <li>
+                <strong>装備作成:</strong>
+                集めたスクラップやチップから新しい武器・防具・ガジェットを作成できます。
+              </li>
+              <li>
+                <strong>強化:</strong>
+                装備は強化することでステータスが上昇し、カード構成が変化します。
+              </li>
+            </ul>
+            <h3 class="rule-h3">装備 ＝ デッキ</h3>
+            <ul class="rule-list">
+              <li><span class="txt-atk">武器</span>: Attackカード中心</li>
+              <li><span class="txt-grd">防具</span>: Guardカード中心</li>
+              <li><span class="txt-brk">ガジェット</span>: Breakカード中心</li>
+              <li>
+                装備の組み合わせが、そのままあなたの「手札（デッキ）」になります。
+              </li>
+            </ul>
+          </div>
+
+          <div class="rule-section">
+            <h2 class="rule-h2" style="border-left-color: #4f4; color: #4f4">
+              成長 (SKILL POINTS)
+            </h2>
+            <p>
+              敵を倒すだけが強さではありません。画面上部の
+              <strong>[MISSION]</strong> を確認してください。<br />
+              特定の条件（5体撃破、ノーダメージ勝利、戦闘回避など）を達成すると
+              <strong>スキルポイント(SP)</strong> を獲得できます。<br />
+              スキルポイントを使って、基礎ステータスを底上げしましょう。
+            </p>
+          </div>
+
+          <p
+            style="
+              text-align: center;
+              margin-top: 20px;
+              color: #4f4;
+              font-weight: bold;
+            "
+          >
+            幸運を祈ります。生き残って、勝利を掴み取れ。
+          </p>
+
+          <div style="text-align: center; margin-top: 20px">
+            <button
+              class="equip-btn active"
+              onclick="closeHowTo()"
+              style="width: 100%"
+            >
+              CLOSE
+            </button>
+          </div>
+        </div>
+      </div>
       <div id="rule-modal" class="modal">
         <div class="modal-content">
           <span class="close-btn" onclick="closeRules()">&times;</span>
