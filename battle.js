@@ -1000,34 +1000,52 @@ const battle = (function () {
       setTimeout(() => {
         if (player.hp <= 0) {
           // 敗北時
-          game.showResult(false, turn); // ゲームオーバー画面へ
+          game.showResult(false, turn);
         } else {
-          // 勝利時
-          alert("YOU WIN! (Found 4 Gold)");
-          game.player.gold = (game.player.gold || 0) + 4; // 4G獲得
+          // --- ★ここから変更: 勝利時の処理 ---
+
+          const goldGained = 4; // 獲得ゴールド設定
+          game.player.gold = (game.player.gold || 0) + goldGained;
+
           game.player.killCounter = (game.player.killCounter || 0) + 1;
           if (game.player.killCounter >= 5) {
-            game.player.killCounter = 0; // リセット
+            game.player.killCounter = 0;
             game.gainSkillPoint("殲滅者 (5 Kills)");
           }
 
-          // ★追加: ノーダメージボーナス判定
+          // ノーダメージボーナス判定
           if (player.tookDamage === false) {
             game.gainSkillPoint("完全勝利 (No Damage)");
           }
 
-          // ★HPの引継ぎ: 戦闘後のHPをゲーム本体に反映
+          // HPの引継ぎ
           game.player.hp = Math.max(1, player.hp);
 
-          // ▼▼▼ 修正: ボス戦かどうかで分岐 ▼▼▼
+          // ログ出力
+          log(
+            `>> VICTORY! <span style="color:#ffd700">${goldGained} Goldゲット！</span>.`
+          );
+
+          // ボス戦分岐
           if (isBossBattle) {
-            // ボス戦勝利 -> ゲームクリア画面へ (ターン数を渡す)
             game.showResult(true, turn);
           } else {
-            // 通常戦闘勝利 -> 探索画面に戻る
-            game.returnToDungeon(true);
+            // ★カットイン演出を作成して表示
+            const cutin = document.createElement("div");
+            cutin.className = "victory-gold-cutin";
+            cutin.innerHTML = `
+              <div style="font-size:24px; color:#4f4; margin-bottom:5px;">VICTORY!</div>
+              <div style="font-size:18px; color:#ffd700;">+${goldGained} Gold</div>
+            `;
+            document.body.appendChild(cutin);
+
+            // 1.5秒後に演出を消して探索画面に戻る
+            setTimeout(() => {
+              cutin.remove();
+              game.returnToDungeon(true);
+            }, 1500);
           }
-          // ▲▲▲ 修正ここまで ▲▲▲
+          // --- ★変更ここまで ---
         }
       }, 500);
       return;

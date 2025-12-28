@@ -1449,10 +1449,10 @@ const game = {
     addHeader("- アビリティ -");
     renderCat(EQUIPMENT.GADGETS, this.player.loadout.gadget, "gadget");
   },
+ /* --- game.js 内の updateExplorePanel を書き換え --- */
   updateExplorePanel() {
     const list = document.getElementById("explore-loadout-list");
     if (list) {
-      // 第3引数に "explore-deck-list" を渡す
       this.renderLoadoutList(
         list,
         () => {
@@ -1463,13 +1463,32 @@ const game = {
     }
     this.renderDeckList("explore-deck-list");
 
-    // 素材情報を更新
+    // 素材・所持金・ポーションボタンの表示更新
     const matsEl = document.getElementById("explore-mats");
     if (matsEl) {
       const m = this.player.mats;
-      matsEl.innerText = `Scrap:${m.scrap} Chip:${m.chip} Herb:${m.herb} Data:${
-        m.data
-      } [強化:${m.re_data || 0}]`;
+      const gold = this.player.gold || 0;
+      
+      // ポーションボタンの生成
+      let potionHtml = "";
+      if ((m.potion || 0) > 0) {
+        // HPが減っている時のみ押せるようにしても良いですが、
+        // usePotion関数側でチェックしているのでここでは常にボタンを表示します
+        potionHtml = `<button onclick="game.usePotion()" class="btn-use-potion" style="margin-left:10px;">回復剤使用 (${m.potion})</button>`;
+      } else {
+        potionHtml = `<span style="color:#666; font-size:10px; margin-left:10px;">(回復剤なし)</span>`;
+      }
+
+      // HTMLを構築 (所持金、ポーションボタン、素材リスト)
+      matsEl.innerHTML = `
+        <div class="explore-info-row">
+          <div><span style="color:#ffd700">Gold: ${gold} G</span></div>
+          <div>${potionHtml}</div>
+        </div>
+        <div style="font-size: 11px; color:#ccc;">
+          Scrap:${m.scrap} Chip:${m.chip} Herb:${m.herb} Data:${m.data} [強化:${m.re_data || 0}]
+        </div>
+      `;
     }
   },
   /* --- game.js (gameオブジェクト内に追加) --- */

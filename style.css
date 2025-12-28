@@ -1899,3 +1899,33 @@ button {
 .btn-use-potion:hover {
   background: #2ea043;
 }
+/* --- style.css 末尾に追加 --- */
+
+/* 戦闘勝利時のゴールド獲得カットイン */
+.victory-gold-cutin {
+  position: fixed;
+  top: 30%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.9);
+  border: 2px solid #ffd700;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+  padding: 20px 40px;
+  z-index: 5000;
+  text-align: center;
+  color: #fff;
+  font-weight: bold;
+  border-radius: 8px;
+  animation: popIn 0.3s forwards;
+  pointer-events: none; /* クリックを邪魔しない */
+}
+
+/* 探索パネル内の情報レイアウト調整 */
+.explore-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+  border-bottom: 1px solid #444;
+  padding-bottom: 5px;
+}
