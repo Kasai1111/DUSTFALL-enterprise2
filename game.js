@@ -1953,6 +1953,7 @@ spContainer.innerHTML = `
     this.currentEnemy = enemy; // ★戦う敵を記録しておく
     this.state = "BATTLE"; // 状態を戦闘中に変更
     dungeon.stop(); // ★ダンジョンの動き（描画ループ）を止める
+    battle.isBossBattle = false;
     battle.start(enemy, isAmbush); // 戦闘開始
     this.showScreen("battle-screen");
   },
