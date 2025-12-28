@@ -829,29 +829,32 @@ const battle = (function () {
     [player, enemy].forEach((e) => {
       while (e.hand.length < 3) {
         if (e.deck.length === 0) {
-          if (!e.initialDeckList) {
-            e.initialDeckList = JSON.parse(JSON.stringify(e.deck));
-          } else {
+          if (e.initialDeckList) {
+            // 1. リストから山札を復元
             e.deck = JSON.parse(JSON.stringify(e.initialDeckList));
+
+            // 2. ★重複防止チェック: 手札に既にSPがある場合、補充した山札からSPを除外する
+            if (e.hand.some((c) => c.isSP)) {
+              e.deck = e.deck.filter((c) => !c.isSP);
+            }
+
             shuffle(e.deck);
             log(`[System] ${e.name}'s Deck Recycled`);
+          } else {
+            // initialDeckList がまだない場合（安全策として現在のデッキをコピー）
+            // ※通常はターン4以前に作成されるためここには来ないはずですが、念のため
+            e.initialDeckList = JSON.parse(JSON.stringify(e.deck));
           }
         }
-        if (e.deck.length === 0 && e.initialDeckList) {
-          e.deck = JSON.parse(JSON.stringify(e.initialDeckList));
 
-          // ★修正: 手札にすでにSPカードがある場合、補充デッキからSPを除外する
-          // これにより「使い切りではない」が「同時に2枚は持てない」状態を作る
-          if (e.hand.some((c) => c.isSP)) {
-            e.deck = e.deck.filter((c) => !c.isSP);
-          }
-
-          shuffle(e.deck);
-          log(`[System] ${e.name}'s Deck Recycled`);
-        }
+        // --- ドロー処理 ---
         if (e.deck.length > 0) {
           e.hand.push(e.deck.pop());
+        } else {
+          // リサイクルしても山札がない場合（バグ防止のための無限ループ脱出）
+          break;
         }
+
         if (e.hand.length >= 3) break;
       }
     });
