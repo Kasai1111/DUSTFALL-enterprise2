@@ -991,7 +991,7 @@ const game = {
 
     dungeon.start();
   },
-  returnToBase(success) {
+ returnToBase(success) {
     dungeon.stop();
     this.day++;
 
@@ -1003,7 +1003,6 @@ const game = {
       this.player.inventory = [];
 
       // 素材 (Scrap, Chip, Herb, Data) を全消去
-      // ※所持している素材はすべて消えますが、storage(倉庫)の中身は安全です
       this.player.mats = { scrap: 0, chip: 0, herb: 0, data: 0, re_data: 0 };
 
       alert(
@@ -1012,16 +1011,17 @@ const game = {
       // --- 変更ここまで ---
     } else {
       alert(`安全に帰還しました。\n(DAY ${this.day} になりました)`);
-      // ★追加: 不戦帰還ボーナス判定
+      
+      // ▼▼▼ 修正: setTimeoutを削除し、即時反映させる ▼▼▼
       if (this.player.encounterCount === 0) {
-        setTimeout(() => {
+        // UI更新(updateBaseUI)の前にポイントを加算することで、画面切り替え時に数値が反映されます
         this.gainSkillPoint("不戦の誓い (No Encounters)");
-       }, 500); // アラート後に少し遅らせて表示
       }
+      // ▲▲▲ 修正ここまで ▲▲▲
     }
 
     this.player.playerBlock = 0;
-    this.updateBaseUI();
+    this.updateBaseUI(); // ここで加算済みのポイントが表示されます
     this.showScreen("base-screen");
     this.state = "BASE";
   },
@@ -2542,6 +2542,34 @@ const dungeon = {
   getDistance(x1, y1, x2, y2) {
     return Math.abs(x1 - x2) + Math.abs(y1 - y2);
   },
+  // ★追加: 視線が通っているか（壁がないか）を判定する関数
+  checkLineOfSight(x0, y0, x1, y1) {
+    let dx = Math.abs(x1 - x0);
+    let dy = Math.abs(y1 - y0);
+    let sx = (x0 < x1) ? 1 : -1;
+    let sy = (y0 < y1) ? 1 : -1;
+    let err = dx - dy;
+
+    while (true) {
+      // 現在の地点が壁(1)なら視線は通らない
+      // ※始点（敵の位置）は壁ではないはずですが、念のためチェックに含まれてもfalseにはなりません
+      if (this.map[y0][x0] === 1) return false;
+
+      // ゴール（プレイヤー位置）に到達したら視線通過成功
+      if (x0 === x1 && y0 === y1) break;
+
+      let e2 = 2 * err;
+      if (e2 > -dy) {
+        err -= dy;
+        x0 += sx;
+      }
+      if (e2 < dx) {
+        err += dx;
+        y0 += sy;
+      }
+    }
+    return true;
+  },
   // 幅優先探索（BFS）でターゲットまでのパスを計算（最大深度制限付き）
   findPath(startX, startY, targetX, targetY, maxDepth = 25) {
     const queue = [[startX, startY, []]];
@@ -2671,7 +2699,11 @@ const dungeon = {
         if (e.facing === 3 && dx < 0 && Math.abs(dy) <= Math.abs(dx) * 2)
           inSight = true;
       }
-
+      if (inSight) {
+        if (!this.checkLineOfSight(e.x, e.y, this.p.x, this.p.y)) {
+          inSight = false;
+        }
+      }
       // プレイヤーが視界内でステルス状態でない場合、aggro状態にする
       if (inSight && !game.player.isStealth) {
         e.aggro = true;

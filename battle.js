@@ -243,8 +243,8 @@ const battle = (function () {
     };
 
     if (name === "Enemy") {
-      entity.hp = 40;
-      entity.maxHp = 40;
+      entity.hp = 30;
+      entity.maxHp = 30;
       const AI_STRATEGY_NAMES = Object.keys(AI_STRATEGIES);
       const randomStrategyName =
         AI_STRATEGY_NAMES[Math.floor(Math.random() * AI_STRATEGY_NAMES.length)];
@@ -1851,8 +1851,9 @@ const battle = (function () {
     slots.forEach((s) => {
       if (!s) return;
       if (s._src === "secret") {
-        if (entity.deck.length > 0) entity.secret = entity.deck.pop();
-        else entity.secret = null;
+        // ★修正: ここでは補充せず、空にするだけにする。
+        // 補充は次のターンの startTurn でリサイクル処理と共に行われます。
+        entity.secret = null;
       } else {
         const idx = entity.hand.findIndex(
           (c) => c.type === s.type && c.cost === s.cost
