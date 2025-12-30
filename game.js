@@ -716,6 +716,7 @@ const game = {
       gadget: "解除キー",
     },
   ],
+  tempAlloc: { hp: 0, atk: 0, break: 0, def: 0 },
   player: {
     hp: 100,
     maxHp: 100,
@@ -1230,31 +1231,77 @@ const game = {
     cutin.style.display = "block";
     }
   },
-  allocateSkillPoint(statType) {
-    if (this.player.skillPoints <= 0) return;
+  // --- allocateSkillPoint を削除し、以下の3つのメソッドを追加してください ---
 
-    // コスト支払い
-    this.player.skillPoints--;
+  // 1. 仮割り当ての増減処理 (+1 または -1)
+  modifyTempSp(statType, amount) {
+    // 現在の仮割り当て合計を計算
+    let currentTempTotal = 0;
+    for (let key in this.tempAlloc) {
+      currentTempTotal += this.tempAlloc[key];
+    }
 
-    // ステータス加算
-   switch (statType) {
-    case 'hp':
-      this.player.maxHp += 10;
-      this.player.hp += 10; // 現在HPも回復させる
-      break;
-    case 'atk':
-      this.player.baseAtk += 2;
-      break;
-    case 'break':
-      this.player.baseBreak += 2;
-      break;
-    case 'def':
-      this.player.baseDef += 2;
-      break;
-   }
+    // プラスする場合のチェック: 所持ポイントを超えていないか
+    if (amount > 0) {
+      if (currentTempTotal >= this.player.skillPoints) {
+        return; // ポイント不足
+      }
+      this.tempAlloc[statType]++;
+    }
+    
+    // マイナスする場合のチェック: 0未満にならないか
+    if (amount < 0) {
+      if (this.tempAlloc[statType] <= 0) {
+        return; // 減らせない
+      }
+      this.tempAlloc[statType]--;
+    }
 
-   // UI更新
-   this.updateBaseUI();
+    // UIを更新して変更を即座に表示
+    this.updateBaseUI();
+  },
+
+  // 2. 確定処理
+  confirmSkillPoints() {
+    let currentTempTotal = 0;
+    for (let key in this.tempAlloc) {
+      currentTempTotal += this.tempAlloc[key];
+    }
+
+    if (currentTempTotal === 0) return; // 変更なしなら何もしない
+
+    if (!confirm("ステータス強化を確定しますか？")) return;
+
+    // 実際にステータスに反映
+    const t = this.tempAlloc;
+    
+    // HP (+10 per point)
+    if (t.hp > 0) {
+      const boost = t.hp * 10;
+      this.player.maxHp += boost;
+      this.player.hp += boost; // 最大HPが増えた分、現在HPも回復
+    }
+    // ATK (+2 per point)
+    if (t.atk > 0) this.player.baseAtk += t.atk * 2;
+    // BREAK (+2 per point)
+    if (t.break > 0) this.player.baseBreak += t.break * 2;
+    // DEF (+2 per point)
+    if (t.def > 0) this.player.baseDef += t.def * 2;
+
+    // ポイント消費
+    this.player.skillPoints -= currentTempTotal;
+
+    // 仮割り当てをリセット
+    this.tempAlloc = { hp: 0, atk: 0, break: 0, def: 0 };
+
+    this.log("ステータス強化を完了しました。");
+    this.updateBaseUI();
+  },
+
+  // 3. リセット処理 (マイナスで戻せますが、一括キャンセルのためにあると便利)
+  resetTempSp() {
+    this.tempAlloc = { hp: 0, atk: 0, break: 0, def: 0 };
+    this.updateBaseUI();
   },
   /* game.js - gameオブジェクト内 */
 
@@ -1492,7 +1539,8 @@ const game = {
     }
   },
   /* --- game.js (gameオブジェクト内に追加) --- */
-openShop() {
+// --- game.js 内の openShop メソッドをこれに置き換えてください ---
+  openShop() {
     const modal = document.getElementById('shop-modal');
     const list = document.getElementById('shop-list');
     const goldEl = document.getElementById('shop-gold');
@@ -1505,14 +1553,25 @@ openShop() {
     // 商品リスト描画
     list.innerHTML = '';
     SHOP_ITEMS.forEach(item => {
+      // ▼▼▼ 修正箇所: 手荷物と倉庫の合計を計算 ▼▼▼
+      const inventoryCount = this.player.mats[item.key] || 0;   // 手荷物にある数
+      const storageCount = this.storage.materials[item.key] || 0; // 倉庫にある数
+      const totalCount = inventoryCount + storageCount;         // 合計
+      // ▲▲▲ 修正ここまで ▲▲▲
+
       const el = document.createElement('div');
       el.className = 'shop-item';
       
       const canBuy = this.player.gold >= item.price;
       
+      // HTML生成部分に totalCount の表示を追加 (class="shop-owned")
       el.innerHTML = `
         <div class="shop-info">
-          <div class="shop-name">${item.name} ${item.desc ? `<span style="font-size:10px; color:#888">(${item.desc})</span>` : ''}</div>
+          <div class="shop-name">
+            ${item.name} 
+            ${item.desc ? `<span style="font-size:10px; color:#888">(${item.desc})</span>` : ''}
+          </div>
+          <div class="shop-owned" style="font-size:11px; color:#aaa;">所持: ${totalCount}</div>
           <div class="shop-price">${item.price} G</div>
         </div>
         <button class="shop-buy-btn" ${canBuy ? '' : 'disabled'} onclick="game.buyItem('${item.key}', ${item.price})">
@@ -1598,9 +1657,6 @@ openShop() {
     document.getElementById("base-day").innerText = this.day;
     document.getElementById("base-hp").innerText = this.player.hp;
 　　　document.getElementById("base-maxhp").innerText = this.player.maxHp;
-　　　document.getElementById("base-baseAtk").innerText = this.player.baseAtk;
-document.getElementById("base-baseBreak").innerText = this.player.baseBreak;
-document.getElementById("base-baseDef").innerText = this.player.baseDef;
 let goldDisplay = document.getElementById('base-gold-display');
     if (!goldDisplay) {
         // ステータスエリアに追加
@@ -1628,44 +1684,64 @@ if (!spContainer) {
 }
 
 // 3. UIの描画
-const sp = this.player.skillPoints;
-const hasPt = sp > 0;
-const disabledAttr = hasPt ? "" : "disabled";
+// --- updateBaseUI 内の「スキルポイント割り振りUIの描画」部分を以下に置き換えてください ---
 
-spContainer.innerHTML = `
-  <div class="sp-header">
-    <span>SKILL POINTS</span>
-    <span style="color:${hasPt ? '#fff' : '#888'}">${sp} Pt</span>
-  </div>
-  <div class="sp-row">
-    <span>最大HP (+10)</span>
-    <div>
-      <span style="color:#fff">${this.player.maxHp}</span>
-      <button class="btn-sp-add" ${disabledAttr} onclick="game.allocateSkillPoint('hp')">+</button>
-    </div>
-  </div>
-  <div class="sp-row">
-    <span>攻撃力 (+2)</span>
-    <div>
-      <span style="color:#fff">${this.player.baseAtk}</span>
-      <button class="btn-sp-add" ${disabledAttr} onclick="game.allocateSkillPoint('atk')">+</button>
-    </div>
-  </div>
-  <div class="sp-row">
-    <span>ブレイク力 (+2)</span>
-    <div>
-      <span style="color:#fff">${this.player.baseBreak}</span>
-      <button class="btn-sp-add" ${disabledAttr} onclick="game.allocateSkillPoint('break')">+</button>
-    </div>
-  </div>
-  <div class="sp-row">
-    <span>防御力 (+2)</span>
-    <div>
-      <span style="color:#fff">${this.player.baseDef}</span>
-      <button class="btn-sp-add" ${disabledAttr} onclick="game.allocateSkillPoint('def')">+</button>
-    </div>
-  </div>
-`;
+    // 3. UIの描画
+    // 現在の残りポイント計算（所持ポイント - 仮割り当て分）
+    let currentTempTotal = 0;
+    for (let key in this.tempAlloc) {
+      currentTempTotal += this.tempAlloc[key];
+    }
+    const remainingPoints = this.player.skillPoints - currentTempTotal;
+    
+    // ボタンの有効無効判定
+    const canAdd = remainingPoints > 0;
+    const canConfirm = currentTempTotal > 0;
+
+    // 各ステータスの表示用ヘルパー関数
+    const renderRow = (label, statKey, currentVal, increasePerPoint) => {
+      const tempVal = this.tempAlloc[statKey];
+      const nextVal = currentVal + (tempVal * increasePerPoint);
+      const diffText = tempVal > 0 ? `<span style="color:#0f0"> (+${tempVal * increasePerPoint})</span>` : "";
+      const canMinus = tempVal > 0;
+
+      return `
+        <div class="sp-row" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+          <span>${label} (+${increasePerPoint})</span>
+          <div style="display:flex; align-items:center; gap:5px;">
+            <span style="margin-right:5px; font-weight:bold;">${currentVal}${diffText}</span>
+            <button class="btn-sp-calc" ${canMinus ? '' : 'disabled'} onclick="game.modifyTempSp('${statKey}', -1)">-</button>
+            <span style="min-width:15px; text-align:center;">${tempVal}</span>
+            <button class="btn-sp-calc" ${canAdd ? '' : 'disabled'} onclick="game.modifyTempSp('${statKey}', 1)">+</button>
+          </div>
+        </div>
+      `;
+    };
+
+    spContainer.innerHTML = `
+      <div class="sp-header">
+        <span>SKILL POINTS</span>
+        <span style="color:${remainingPoints > 0 ? '#fff' : '#888'}">残り: ${remainingPoints} Pt</span>
+      </div>
+      
+      ${renderRow('最大HP', 'hp', this.player.maxHp, 10)}
+      ${renderRow('攻撃力', 'atk', this.player.baseAtk, 2)}
+      ${renderRow('ブレイク力', 'break', this.player.baseBreak, 2)}
+      ${renderRow('防御力', 'def', this.player.baseDef, 2)}
+
+      <div style="text-align:right; margin-top:10px; border-top:1px solid #444; padding-top:5px;">
+        ${canConfirm ? 
+          `<button onclick="game.resetTempSp()" style="font-size:11px; margin-right:10px; background:#444;">リセット</button>` : ''
+        }
+        <button 
+          onclick="game.confirmSkillPoints()" 
+          style="background:${canConfirm ? '#ffd700' : '#333'}; color:${canConfirm ? '#000' : '#888'}; border:none; padding:4px 12px; font-weight:bold;"
+          ${canConfirm ? '' : 'disabled'}
+        >
+          確 定
+        </button>
+      </div>
+    `;
     const m = this.player.mats;
     document.getElementById("base-mats").innerText = `Scrap:${m.scrap} Chip:${
       m.chip
@@ -2206,6 +2282,7 @@ const dungeon = {
     this.entities = [];
     // 敵の数を減らす（8 + difficulty）
     for (let i = 0; i < 8 + difficulty; i++) this.spawnEntity("enemy");
+    this.spawnEntity("unique_enemy");
     // ルートアイテムの数も少し減らす
     for (let i = 0; i < 12; i++) this.spawnEntity("loot");
     // ★追加: 強化用データ(re_data)を1つ確実に、運が良ければもう1つ配置
@@ -2495,8 +2572,8 @@ const dungeon = {
     }
     const hit = this.entities.find((e) => e.x === nx && e.y === ny && e.active);
     if (hit) {
-      if (hit.type === "enemy") {
-        let pDir = -1;
+      if (hit.type === "enemy" || hit.type === "unique_enemy") {
+    　　let pDir = -1;
         if (dy === -1) pDir = 0;
         if (dx === 1) pDir = 1;
         if (dy === 1) pDir = 2;
@@ -2694,7 +2771,23 @@ const dungeon = {
   },
   updateEnemies() {
     this.entities.forEach((e) => {
-      if (e.type !== "enemy" || !e.active) return;
+      if (!e.active) return;
+   　 if (e.type !== "enemy" && e.type !== "unique_enemy") return;
+  　　 if (e.type === "unique_enemy") {
+      if (Math.random() < 0.3) { // 30%の確率で移動
+        const dirs = [[0, -1, 0], [1, 0, 1], [0, 1, 2], [-1, 0, 3]];
+        const dIdx = Math.floor(Math.random() * 4);
+        const d = dirs[dIdx];
+        const nx = e.x + d[0];
+        const ny = e.y + d[1];
+        e.facing = d[2]; // 向きを変更
+        if (this.isWalkable(nx, ny)) {
+           e.x = nx;
+           e.y = ny;
+        }
+      }
+      return; // 追跡ロジックを行わずにここで終了
+   　 }
       const dx = this.p.x - e.x;
       const dy = this.p.y - e.y;
       const dist = Math.abs(dx) + Math.abs(dy);
@@ -2872,7 +2965,33 @@ const dungeon = {
       if (dist < 10) {
         const drawX = (e.x + offsetX) * ts;
         const drawY = (e.y + offsetY) * ts;
-        if (e.type === "enemy") {
+        // ▼▼▼ 追加: ユニークモンスターの描画 (紫色) ▼▼▼
+    if (e.type === "unique_enemy") {
+      ctx.fillStyle = "#800080"; // 紫色
+      ctx.fillRect(drawX + 2, drawY + 2, ts - 4, ts - 4);
+      
+      // 視線マーカー（少し明るい紫）
+      ctx.fillStyle = "#da70d681"; 
+      ctx.beginPath();
+      ctx.moveTo(drawX + ts / 2, drawY + ts / 2);
+      let startAng = 0;
+      if (e.facing === 0) startAng = 1.5 * Math.PI;
+      if (e.facing === 1) startAng = 0;
+      if (e.facing === 2) startAng = 0.5 * Math.PI;
+      if (e.facing === 3) startAng = Math.PI;
+      ctx.arc(
+        drawX + ts / 2,
+        drawY + ts / 2,
+        6 * ts,
+        startAng - 0.5,
+        startAng + 0.5
+      );
+      ctx.lineTo(drawX + ts / 2, drawY + ts / 2);
+      ctx.fill();
+    } 
+    // ▲▲▲ 追加ここまで ▲▲▲
+
+    else if (e.type === "enemy") {
           ctx.fillStyle = e.aggro ? "#f00" : "#d44";
           ctx.fillRect(drawX + 2, drawY + 2, ts - 4, ts - 4);
           ctx.fillStyle = "rgba(255, 0, 0, 0.2)";

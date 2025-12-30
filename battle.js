@@ -1022,9 +1022,24 @@ const battle = (function () {
           game.showResult(false, turn);
         } else {
           // --- ★ここから変更: 勝利時の処理 ---
+          let goldGained = 0;
 
-          const goldGained = 4; // 獲得ゴールド設定
-          game.player.gold = (game.player.gold || 0) + goldGained;
+          if (enemy.isUnique) {
+            // ユニークモンスター報酬: 10 Gold + 1 SP
+            goldGained = 10;
+            game.player.gold = (game.player.gold || 0) + goldGained;
+
+            // スキルポイント獲得
+            // (演出が重なると消える可能性があるため、少し遅らせるか、ここで直接呼ぶ)
+            setTimeout(() => {
+              game.gainSkillPoint("ユニーク撃破 (UNIQUE BONUS)");
+            }, 1000); // ゴールド演出と被らないように少し遅らせる
+          } else {
+            // 通常報酬: 4 Gold
+            goldGained = 4;
+            game.player.gold = (game.player.gold || 0) + goldGained;
+          }
+          // ▲▲▲ 変更ここまで ▲▲▲
 
           game.player.killCounter = (game.player.killCounter || 0) + 1;
           if (game.player.killCounter >= 5) {
@@ -2101,9 +2116,14 @@ const battle = (function () {
           abilityHtml = `<div class="ability-badge ${cls}">${ab.name}</div>`;
         }
 
+        let typeInit = c.type.charAt(0);
+        if (c.type === "SP") typeInit = "SP";
+
         cardDiv.innerHTML = `
-                <div class="card-type">${c.type}</div>
-                <div class="card-cost">${c.cost}</div>
+                <div class="card-header-compact">
+                  <span class="chk-type">${typeInit}</span>
+                  <span class="chk-cost">${c.cost}</span>
+                </div>
                 <div class="card-stats">${statsHtml}</div>
                 ${abilityHtml}`;
       }
@@ -2220,8 +2240,18 @@ const battle = (function () {
       abilityHtml = `<div class="ability-badge ${cls}">${ab.name}</div>`;
     }
 
-    div.innerHTML = `<div class="card-type">${card.type}</div>
-             <div class="card-cost">${card.cost}</div>
+    let typeInit = card.type.charAt(0);
+    if (card.type === "SP") typeInit = "SP";
+
+    // シークレットの場合のコスト表示
+    const costDisplay = card.cost; // 常にコストを表示
+    const typeDisplay = typeInit; // 常にタイプを表示
+
+    div.innerHTML = `
+             <div class="card-header-compact">
+               <span class="chk-type">${typeDisplay}</span>
+               <span class="chk-cost">${costDisplay}</span>
+             </div>
              <div class="card-stats">${statsHtml}</div>
              ${abilityHtml}
              ${
@@ -2385,6 +2415,37 @@ const battle = (function () {
       const eg = gKeys[Math.floor(Math.random() * gKeys.length)];
 
       enemy = createEntity("Enemy", ew, ea, eg);
+      // ▼▼▼ 追加: ユニークモンスターの場合の処理 ▼▼▼
+    } else if (mapEntity && mapEntity.type === "unique_enemy") {
+      // 通常敵と同じようにランダム装備で生成
+      const wKeys = Object.keys(EQUIPMENT.WEAPONS).filter(
+        (k) => !EQUIPMENT.WEAPONS[k].isUpgraded
+      );
+      const aKeys = Object.keys(EQUIPMENT.ARMORS).filter(
+        (k) => !EQUIPMENT.ARMORS[k].isUpgraded
+      );
+      const gKeys = Object.keys(EQUIPMENT.GADGETS).filter(
+        (k) => !EQUIPMENT.GADGETS[k].isUpgraded
+      );
+
+      const ew = wKeys[Math.floor(Math.random() * wKeys.length)];
+      const ea = aKeys[Math.floor(Math.random() * aKeys.length)];
+      const eg = gKeys[Math.floor(Math.random() * gKeys.length)];
+
+      enemy = createEntity("UNIQUE MONSTER", ew, ea, eg);
+
+      // ★仕様: HP 50, EP 9
+      enemy.hp = 50;
+      enemy.maxHp = 50;
+      enemy.ep = 9;
+      enemy.maxEp = 9;
+
+      // 報酬判定用にフラグを立てておく
+      enemy.isUnique = true;
+
+      // 少し強そうな性格にしておく
+      enemy.personalityWord = "徘徊する災厄";
+      // ▲▲▲ 追加ここまで ▲▲▲
     } else {
       const wKeys = Object.keys(EQUIPMENT.WEAPONS);
       enemy = createEntity(

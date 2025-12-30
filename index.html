@@ -90,7 +90,8 @@
             <ul class="rule-list">
               <li>
                 <strong>視界:</strong>
-                敵（赤い正方形）には視界があります。見つかると追跡モードになり、接触すると戦闘になります。
+                敵（赤い正方形）には視界があります。見つかると追跡モードになり、接触すると戦闘になります。,<br />
+                ユニークモンスター（紫の正方形）は通常の敵より強いです。しかし追ってくることはなく、勝利した場合は多くの報酬を得ることができます。
               </li>
               <li>
                 <strong>時間経過:</strong>
@@ -453,12 +454,8 @@
               <p>
                 HP: <span id="base-hp"></span>/<span id="base-maxhp"></span>
               </p>
-              <p>
-                攻撃力: <span id="base-baseAtk"></span> ブレイク力:
-                <span id="base-baseBreak"></span> 防御力:
-                <span id="base-baseDef"></span>
-              </p>
-              <p>アイテム: <span id="base-mats"></span></p>
+
+              <span id="base-mats"></span>
               <p style="margin-top: 10px; color: #ffd700">
                 手荷物: <span id="inventory-count">0</span>/25
               </p>
@@ -518,6 +515,33 @@
           <div id="stealth-indicator">ステルスモード (Shift)</div>
         </div>
         <div id="explore-log"></div>
+        <div id="loot-legend">
+          　　　　
+          <div class="legend-item">
+            <span class="legend-dot" style="background: #aaa"></span>Scrap
+          </div>
+          　　　　
+          <div class="legend-item">
+            <span class="legend-dot" style="background: #ff0"></span>Chip
+          </div>
+          　　　　
+          <div class="legend-item">
+            <span class="legend-dot" style="background: #4f4"></span>Herb
+          </div>
+          　　　　
+          <div class="legend-item">
+            <span class="legend-dot" style="background: #0ff"></span>Data
+          </div>
+          　　　　
+          <div class="legend-item">
+            <span
+              class="legend-dot"
+              style="background: #000; border: 1px solid #fff"
+            ></span
+            >強化用データ
+          </div>
+          　　　
+        </div>
         <div id="explore-panel">
           <div
             style="
