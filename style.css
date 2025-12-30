@@ -6,6 +6,7 @@
   --ui-bg: #1f1f1f;
   --ui-border: #444;
 }
+
 body {
   margin: 0;
   padding: 0;
@@ -13,11 +14,14 @@ body {
   color: var(--text-color);
   font-family: "Segoe UI", monospace;
   user-select: none;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  overflow: hidden;
+
+  /* ▼▼▼ 修正: ここを変更します ▼▼▼ */
+  /* display: flex; は削除または無効化し、通常のブロック配置にします */
+  /* overflow: hidden; を削除または auto に変更します */
+  overflow: auto;
+  min-height: 100vh; /* 画面の高さいっぱいに背景を伸ばす */
+  text-align: center; /* コンテナを中央寄せするための簡易的な手法 */
+  /* ▲▲▲ 修正ここまで ▲▲▲ */
 }
 
 #game-container {
@@ -27,6 +31,10 @@ body {
   background: #000;
   border: 2px solid #333;
   box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+
+  /* ▼▼▼ 追加: 画面中央に配置するスタイル ▼▼▼ */
+  margin: 20px auto; /* 上下に余白、左右は自動（中央寄せ） */
+  /* ▲▲▲ 追加ここまで ▲▲▲ */
 }
 
 /* --- Screen Management --- */

@@ -2212,8 +2212,16 @@ const dungeon = {
     this.spawnEntity("re_data");
     if (Math.random() < 0.3) this.spawnEntity("re_data");
     window.onkeydown = (e) => {
+      // ゲームの状態が EXPLORE (探索中) でなければ何もしない
       if (game.state !== "EXPLORE") return;
+
       const k = e.key.toLowerCase();
+      
+      // ★追加: 矢印キーやスペースキーが押された場合、ブラウザのスクロールを防ぐ
+      const preventKeys = ["arrowup", "arrowdown", "arrowleft", "arrowright", " "];
+      if (preventKeys.includes(k)) {
+        e.preventDefault();
+      }
 
       // Eキーで装備パネルを開閉
       if (k === "e") {
@@ -2228,12 +2236,17 @@ const dungeon = {
       if (e.shiftKey) game.player.isStealth = true;
       let dx = 0,
         dy = 0;
+      
+      // 移動判定
       if (k === "w" || k === "arrowup") dy = -1;
       if (k === "s" || k === "arrowdown") dy = 1;
       if (k === "a" || k === "arrowleft") dx = -1;
       if (k === "d" || k === "arrowright") dx = 1;
+      
       if (dx !== 0 || dy !== 0) this.movePlayer(dx, dy);
     };
+    // ▲▲▲ 修正ここまで ▲▲▲
+
     window.onkeyup = (e) => {
       if (e.key === "Shift") game.player.isStealth = false;
     };
