@@ -853,9 +853,29 @@ const battle = (function () {
           // リサイクルしても山札がない場合（バグ防止のための無限ループ脱出）
           break;
         }
-
-        if (e.hand.length >= 3) break;
       }
+
+      // ▼▼▼ 追加修正: Secretスロットが空なら補充する ▼▼▼
+      if (!e.secret) {
+        // 山札がないならリサイクルを試みる（手札補充と同様のロジック）
+        if (e.deck.length === 0 && e.initialDeckList) {
+          e.deck = JSON.parse(JSON.stringify(e.initialDeckList));
+          // 手札にSPがある場合の重複排除
+          if (e.hand.some((c) => c.isSP)) {
+            e.deck = e.deck.filter((c) => !c.isSP);
+          }
+          shuffle(e.deck);
+          log(`[System] ${e.name}'s Deck Recycled for Secret`);
+        }
+
+        // 山札から補充
+        if (e.deck.length > 0) {
+          e.secret = e.deck.pop();
+          // ログを出したければ追加
+          // log(`[System] ${e.name}'s Secret Refilled`);
+        }
+      }
+      // ▲▲▲ 追加ここまで ▲▲▲
     });
 
     // --- PREDICTION FIX: Forced Slot 1 Logic ---

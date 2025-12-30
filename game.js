@@ -2029,7 +2029,7 @@ const dungeon = {
   entities: [],
   p: { x: 1, y: 1 },
   timer: null,
-  timeLeft: 180,
+  timeLeft: 200,
   lastTime: 0,
   enemyMoveTimer: 0,
   init(difficulty) {
@@ -2202,7 +2202,7 @@ const dungeon = {
 
     // 6. プレイヤーとエンティティの初期化
     game.player.stamina = 100;
-    this.timeLeft = 180;
+    this.timeLeft = 200;
     this.entities = [];
     // 敵の数を減らす（8 + difficulty）
     for (let i = 0; i < 8 + difficulty; i++) this.spawnEntity("enemy");
